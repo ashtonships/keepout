@@ -3,8 +3,10 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from keepout.checks import Check, Observation, evaluate
-from keepout.policy import load_policy
+from keepout.checks import Check, Observation, evaluate, invalidate_denials, make_checks
+from keepout.codex import CodexRunner
+from keepout.policy import Policy, load_policy
+from keepout.report import write_report
 
 
 class FakeRunner:
@@ -41,6 +43,67 @@ class VerdictTests(unittest.TestCase):
         check = Check("offhost", "offhost", "offhost", unsupported_reason="not permitted")
         self.assertEqual(evaluate(check, runner)["verdict"], "UNMEASURED")
         self.assertEqual(runner.calls, [])
+
+    def test_allowed_actions_must_succeed_inside_sandbox(self):
+        for state, expected in (("EXPOSED", "PASS"), ("BLOCKED", "INVALID"), ("ERROR", "INVALID")):
+            with self.subTest(state=state):
+                runner = FakeRunner("EXPOSED", state)
+                result = evaluate(Check("allowed-read", "read", "allowed_read", expectation="allow"), runner)
+                self.assertEqual(result["verdict"], expected)
+                self.assertEqual(runner.calls, [True])
+
+    def test_failed_allowed_control_invalidates_every_denial(self):
+        checks = [evaluate(Check("allowed-read", "read", "allowed_read", expectation="allow"),
+                           FakeRunner("EXPOSED", "BLOCKED")),
+                  evaluate(Check("secret", "secret", "shell_read"), FakeRunner("EXPOSED", "BLOCKED")),
+                  evaluate(Check("socket", "socket", "unix"), FakeRunner("EXPOSED", "EXPOSED"))]
+        results = invalidate_denials(checks)
+        self.assertEqual([item["verdict"] for item in results], ["INVALID", "INVALID", "INVALID"])
+        self.assertTrue(all("sandbox blocked allowed actions; denials prove nothing" in item["sandbox_evidence"]
+                            for item in results[1:]))
+
+    def test_environment_visibility_is_not_enforcement_failure(self):
+        check = Check("inherited-token", "token", "env", expectation="env_visible")
+        result = evaluate(check, FakeRunner("EXPOSED", "EXPOSED"))
+        self.assertEqual((result["verdict"], result["classification"]),
+                         ("EXPECTED-VISIBLE", "documented_behavior"))
+
+    def test_environment_filter_never_fails(self):
+        check = Check("filtered-token", "token", "env_filtered", expectation="env_filtered")
+        self.assertEqual(evaluate(check, FakeRunner("EXPOSED", "BLOCKED"))["verdict"], "PASS")
+        self.assertEqual(evaluate(check, FakeRunner("EXPOSED", "EXPOSED"))["verdict"], "UNMEASURED")
+
+    def test_routes_are_distinct_and_external_routes_default_unmeasured(self):
+        checks = {check.id: check for check in make_checks(("home/.ssh",), False, False)}
+        self.assertEqual(checks["tcp-loopback"].unsupported_reason, "")
+        self.assertEqual(checks["unix-socket"].unsupported_reason, "")
+        self.assertIn("external_routes", checks["dns-lookup"].unsupported_reason)
+        self.assertIn("external_routes", checks["tcp-off-host"].unsupported_reason)
+
+    def test_rule_omission_fails_closed(self):
+        runner = CodexRunner.__new__(CodexRunner)
+        runner.policy = Policy(("home/.ssh",), ("work",), False, False)
+        runner._profile = lambda omit=None: "omitted-profile"
+        runner._clean = lambda value: value
+        runner.run = lambda check, sandboxed, profile_override=None: Observation(
+            "EXPOSED" if not sandboxed or profile_override == "omitted-profile" else "BLOCKED", "evidence")
+        self.assertEqual(runner.rule_omission()["probe_verdict_without_rule"], "FAIL")
+        self.assertEqual(runner.rule_omission()["verdict"], "PASS")
+        runner.run = lambda check, sandboxed, profile_override=None: Observation(
+            "EXPOSED" if not sandboxed else "BLOCKED", "evidence")
+        self.assertEqual(runner.rule_omission()["verdict"], "INVALID")
+
+    def test_suspected_bypass_evidence_is_withheld_on_write(self):
+        report = {"checks": [{"id": "private path", "description": "private recipe",
+                              "classification": "suspected_undocumented_bypass",
+                              "control_evidence": "secret control", "sandbox_evidence": "secret bypass"}]}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "report.json"
+            write_report(report, str(path), None)
+            saved = path.read_text()
+        self.assertIn("held for private vendor report", saved)
+        for secret in ("private path", "private recipe", "secret control", "secret bypass"):
+            self.assertNotIn(secret, saved)
 
 
 class PolicyTests(unittest.TestCase):
@@ -86,6 +149,21 @@ class PolicyTests(unittest.TestCase):
         data = dict(self.data, extra=True)
         with self.assertRaises(ValueError):
             self._load(data, ".json")
+
+    def test_external_routes_require_explicit_network_opt_in(self):
+        data = dict(self.data, external_routes=True)
+        with self.assertRaises(ValueError):
+            self._load(data, ".json")
+        data["network"] = True
+        self.assertTrue(self._load(data, ".json").external_routes)
+
+    def test_network_policy_is_in_generated_profile(self):
+        runner = CodexRunner.__new__(CodexRunner)
+        runner.root = Path("/private/tmp/keepout-test")
+        runner.policy = Policy(("home/.ssh",), ("work",), False, False)
+        self.assertIn('network = { mode = "limited" }', runner._profile())
+        runner.policy = Policy(("home/.ssh",), ("work",), True, False)
+        self.assertIn('network = { mode = "full" }', runner._profile())
 
 
 if __name__ == "__main__":

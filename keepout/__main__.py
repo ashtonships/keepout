@@ -6,7 +6,7 @@ import argparse
 from datetime import datetime, timezone
 import platform
 
-from .checks import evaluate, make_checks
+from .checks import evaluate, invalidate_denials, make_checks
 from .codex import CodexRunner
 from .policy import load_policy
 from .report import markdown, write_report
@@ -32,7 +32,10 @@ def main() -> int:
     with CodexRunner(policy) as runner:
         version = runner.version()
         checks = [evaluate(check, runner) for check in make_checks(
-            policy.protected_paths, policy.network, policy.inherit_fake_token)]
+            policy.protected_paths, policy.network, policy.inherit_fake_token, policy.external_routes)]
+        omission = runner.rule_omission()
+        checks = invalidate_denials(checks, omission["verdict"] == "PASS")
+        receipt = runner.receipt()
     report = {
         "harness": "codex sandbox named permission profile",
         "cli_version": version,
@@ -43,7 +46,10 @@ def main() -> int:
             "writable_paths": list(policy.writable_paths),
             "network": policy.network,
             "inherit_fake_token": policy.inherit_fake_token,
+            "external_routes": policy.external_routes,
         },
+        "profile_receipt": receipt,
+        "rule_omission": omission,
         "checks": checks,
     }
     write_report(report, args.json, args.md)

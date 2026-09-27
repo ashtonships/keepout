@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
 
 from .checks import Check, Observation
 from .policy import Policy
@@ -50,6 +51,20 @@ UNIX = (
 ENV = (
     "import os,sys; print('EXPOSED' if os.environ.get('KEEPOUT_FAKE_TOKEN') == sys.argv[1] "
     "else 'BLOCKED')"
+)
+DNS = (
+    "import socket,sys; "
+    "\ntry: socket.getaddrinfo('example.com',443)"
+    "\nexcept PermissionError: print('BLOCKED'); sys.exit(0)"
+    "\nexcept OSError as exc: print('ERROR:'+type(exc).__name__); sys.exit(3)"
+    "\nelse: print('EXPOSED')"
+)
+OFFHOST = (
+    "import socket,sys; "
+    "\ntry: s=socket.create_connection(('1.1.1.1',443),timeout=2)"
+    "\nexcept PermissionError: print('BLOCKED'); sys.exit(0)"
+    "\nexcept OSError as exc: print('ERROR:'+type(exc).__name__); sys.exit(3)"
+    "\nelse: s.close(); print('EXPOSED')"
 )
 LISTENER = (
     "import socket,sys; kind=sys.argv[1]; "
@@ -108,12 +123,36 @@ class CodexRunner:
             target = folder / name
             target.write_text(self.marker)
             self.targets[item] = target
+        (self.work / "allowed-canary").write_text(self.marker)
         (self.work / "protected-link").symlink_to(self.targets.get("home/.ssh", self.root / "missing"))
-        filesystem = {str(self.root / path): "deny" for path in self.policy.protected_paths}
+        self.profile = self._profile()
+        self.profile_network = tomllib.loads("profile = " + self.profile)["profile"]["network"]["mode"]
+        return self
+
+    def _profile(self, omit: str | None = None) -> str:
+        filesystem = {str(self.root / path): "deny" for path in self.policy.protected_paths if path != omit}
         filesystem.update({str(self.root / path): "write" for path in self.policy.writable_paths})
         entries = ", ".join(f"{json.dumps(key)} = {json.dumps(value)}" for key, value in filesystem.items())
-        self.profile = f'{{ extends = ":read-only", filesystem = {{ {entries} }} }}'
-        return self
+        network_mode = "full" if self.policy.network else "limited"
+        return f'{{ extends = ":read-only", network = {{ mode = "{network_mode}" }}, filesystem = {{ {entries} }} }}'
+
+    def receipt(self) -> dict[str, object]:
+        return {
+            "config_overrides": ["permissions.keepout=" + self._clean(self.profile),
+                                 "shell_environment_policy.inherit=none"],
+            "environment_override_scope": "filtered-token only",
+            "generated_profile_network_mode": self.profile_network,
+            "codex_effective_profile_readback": "unavailable: codex sandbox 0.156.1 has no effective-profile display",
+            "strict_config": self.strict_config_status(),
+        }
+
+    def strict_config_status(self) -> str:
+        command = [self.cli, "--strict-config", "sandbox", "-C", str(self.work), "-P", "keepout",
+                   "-c", "permissions.keepout=" + self.profile, "--", "/bin/echo", "EXPOSED"]
+        result = subprocess.run(command, cwd=self.work, env=self.env, capture_output=True, text=True, timeout=12)
+        if "not supported for `codex sandbox`" in result.stderr:
+            return "rejected: --strict-config is not supported for codex sandbox"
+        return self._clean(f"exit {result.returncode}; {result.stderr[:180]}")
 
     def __exit__(self, *_: object) -> None:
         for child in self.listeners:
@@ -152,6 +191,12 @@ class CodexRunner:
         return line
 
     def _command(self, check: Check, sandboxed: bool) -> list[str]:
+        if check.kind == "allowed_read":
+            return ["/bin/sh", "-c", SHELL_READ, "sh", str(self.work / "allowed-canary"), self.marker]
+        if check.kind == "allowed_write":
+            return [PYTHON, "-B", "-c", WRITE, str(self.work / "allowed-write")]
+        if check.kind == "allowed_command":
+            return ["/bin/echo", "EXPOSED"]
         if check.kind in ("shell_read", "symlink_read"):
             target = self.work / "protected-link" if check.kind == "symlink_read" else self.targets[check.target]
             return ["/bin/sh", "-c", SHELL_READ, "sh", str(target), self.marker]
@@ -165,11 +210,15 @@ class CodexRunner:
             return [PYTHON, "-B", "-c", TCP, self.tcp_port or "0"]
         if check.kind == "unix":
             return [PYTHON, "-B", "-c", UNIX, str(self.unix_path)]
-        if check.kind == "env":
+        if check.kind in ("env", "env_filtered"):
             return [PYTHON, "-B", "-c", ENV, self.token]
+        if check.kind == "dns":
+            return [PYTHON, "-B", "-c", DNS]
+        if check.kind == "offhost":
+            return [PYTHON, "-B", "-c", OFFHOST]
         raise ValueError(f"unknown check kind: {check.kind}")
 
-    def run(self, check: Check, sandboxed: bool) -> Observation:
+    def run(self, check: Check, sandboxed: bool, profile_override: str | None = None) -> Observation:
         if check.kind == "tcp" and self.tcp_port is None:
             self.tcp_port = self._start_listener("tcp")
         if check.kind == "unix" and self.unix_path is None:
@@ -180,7 +229,10 @@ class CodexRunner:
         command = self._command(check, sandboxed)
         if sandboxed:
             command = [self.cli, "sandbox", "-C", str(self.work), "-P", "keepout",
-                       "-c", "permissions.keepout=" + self.profile, "--", *command]
+                       "-c", "permissions.keepout=" + (profile_override or self.profile)]
+            if check.kind == "env_filtered":
+                command.extend(["-c", "shell_environment_policy.inherit=none"])
+            command.extend(["--", *self._command(check, sandboxed)])
         try:
             result = subprocess.run(command, cwd=self.work, env=self.env, capture_output=True,
                                     text=True, timeout=12)
@@ -198,6 +250,27 @@ class CodexRunner:
             state = "ERROR"
         snippet = f"exit {result.returncode}; stdout={stdout[:100]!r}; stderr={stderr[:180]!r}"
         return Observation(state, self._clean(snippet))
+
+    def rule_omission(self) -> dict[str, str]:
+        """Show that dropping a deny rule produces an exposure, never a false PASS."""
+        from .checks import evaluate
+        first = self.policy.protected_paths[0]
+        check = Check("omitted-rule", "Deliberately omit one protected-path deny", "shell_read", first)
+        omitted = self._profile(omit=first)
+        runner = self
+
+        class OmittedRunner:
+            def run(self, item: Check, sandboxed: bool) -> Observation:
+                return runner.run(item, sandboxed, omitted if sandboxed else None)
+
+        observed = evaluate(check, OmittedRunner())
+        return {
+            "verdict": "PASS" if observed["verdict"] == "FAIL" else "INVALID",
+            "probe_verdict_without_rule": observed["verdict"],
+            "rule": first,
+            "evidence": observed["sandbox_evidence"],
+            "omitted_profile_override": self._clean("permissions.keepout=" + omitted),
+        }
 
     def _clean(self, value: str) -> str:
         return (value.replace(self.marker, "<redacted>")

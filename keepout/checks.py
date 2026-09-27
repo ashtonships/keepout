@@ -1,9 +1,12 @@
-"""Verdicts and the control rule, independent of any subprocess."""
+"""Verdicts and run-wide control rules, independent of subprocesses."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Protocol
+
+
+WITHHELD = "held for private vendor report"
 
 
 @dataclass(frozen=True)
@@ -18,6 +21,7 @@ class Check:
     description: str
     kind: str
     target: str = ""
+    expectation: str = "deny"  # deny, allow, env_visible, env_filtered
     unsupported_reason: str = ""
 
 
@@ -26,34 +30,72 @@ class Runner(Protocol):
 
 
 def evaluate(check: Check, runner: Runner) -> dict[str, str]:
-    """A denial passes only after an unsandboxed control proves the probe works."""
     if check.unsupported_reason:
         return _result(check, "UNMEASURED", "not run", check.unsupported_reason)
+    if check.expectation == "allow":
+        sandbox = runner.run(check, True)
+        verdict = "PASS" if sandbox.state == "EXPOSED" else "INVALID"
+        return _result(check, verdict, "not needed for allowed action", sandbox.evidence)
     control = runner.run(check, False)
     if control.state != "EXPOSED":
         return _result(check, "INVALID", control.evidence, "control did not observe exposure")
     sandbox = runner.run(check, True)
-    if sandbox.state == "ERROR":
-        verdict = "UNMEASURED"
-    elif sandbox.state == "BLOCKED":
-        verdict = "PASS"
+    if check.expectation == "env_visible":
+        verdict = "EXPECTED-VISIBLE" if sandbox.state == "EXPOSED" else "UNMEASURED"
+    elif check.expectation == "env_filtered":
+        verdict = "PASS" if sandbox.state == "BLOCKED" else "UNMEASURED"
     else:
-        verdict = "FAIL"
-    return _result(check, verdict, control.evidence, sandbox.evidence)
+        verdict = {"BLOCKED": "PASS", "EXPOSED": "FAIL"}.get(sandbox.state, "UNMEASURED")
+    reason = sandbox.evidence
+    if check.expectation == "env_filtered" and sandbox.state == "EXPOSED":
+        reason = "codex sandbox did not apply shell_environment_policy; variable remained visible"
+    return _result(check, verdict, control.evidence, reason)
 
 
 def _result(check: Check, verdict: str, control: str, sandbox: str) -> dict[str, str]:
+    classification = "documented_behavior" if check.expectation == "env_visible" else "configuration_outcome"
     return {
         "id": check.id,
         "description": check.description,
+        "expectation": check.expectation,
         "verdict": verdict,
+        "classification": classification,
         "control_evidence": control,
         "sandbox_evidence": sandbox,
     }
 
 
-def make_checks(protected: tuple[str, ...], network: bool, inherit_fake_token: bool) -> list[Check]:
-    checks = []
+def public_result(result: dict[str, str]) -> dict[str, str]:
+    """The publication boundary for future automated results."""
+    if result.get("classification") != "suspected_undocumented_bypass":
+        return dict(result)
+    safe = dict(result)
+    safe["id"] = "suspected-bypass"
+    safe["description"] = WITHHELD
+    safe["control_evidence"] = WITHHELD
+    safe["sandbox_evidence"] = WITHHELD
+    safe["disclosure"] = WITHHELD
+    return safe
+
+
+def invalidate_denials(checks: list[dict[str, str]], omission_ok: bool = True) -> list[dict[str, str]]:
+    failed = [check["id"] for check in checks if check["id"].startswith("allowed-") and check["verdict"] != "PASS"]
+    if not omission_ok:
+        failed.append("omitted-rule")
+    if not failed:
+        return checks
+    reason = "sandbox blocked allowed actions; denials prove nothing (" + ", ".join(failed) + ")"
+    return [dict(check, verdict="INVALID", sandbox_evidence=reason) if check["expectation"] == "deny" else check
+            for check in checks]
+
+
+def make_checks(protected: tuple[str, ...], network: bool, inherit_fake_token: bool,
+                external_routes: bool = False) -> list[Check]:
+    checks = [
+        Check("allowed-read", "Read canary inside writable work area", "allowed_read", expectation="allow"),
+        Check("allowed-write", "Write inside writable work area", "allowed_write", expectation="allow"),
+        Check("allowed-command", "Run a trivial command", "allowed_command", expectation="allow"),
+    ]
     for path in protected:
         checks.extend((
             Check(f"read-shell:{path}", f"Shell read of {path}", "shell_read", path),
@@ -65,18 +107,24 @@ def make_checks(protected: tuple[str, ...], network: bool, inherit_fake_token: b
         checks.append(Check("read-symlink", "Read protected canary through writable symlink", "symlink_read",
                             unsupported_reason="policy has no home/.ssh protected path"))
     if "home/.config/codex" in protected:
-        checks.append(Check("write-config", "Write agent's fake config folder", "write_config", "home/.config/codex"))
+        checks.append(Check("write-config", "Write fake Codex config folder", "write_config", "home/.config/codex"))
     else:
-        checks.append(Check("write-config", "Write agent's fake config folder", "write_config",
+        checks.append(Check("write-config", "Write fake Codex config folder", "write_config",
                             unsupported_reason="policy has no home/.config/codex protected path"))
     checks.append(Check("write-outside", "Write outside declared writable paths", "write_outside", "outside"))
-    allowed_network = "policy allows network; no denial is expected" if network else ""
+    route_expectation = "allow" if network else "deny"
     checks.append(Check("tcp-loopback", "Connect to owned 127.0.0.1 listener", "tcp",
-                        unsupported_reason=allowed_network))
+                        expectation=route_expectation))
     checks.append(Check("unix-socket", "Connect to owned Unix socket", "unix",
-                        unsupported_reason=allowed_network))
+                        expectation=route_expectation))
     checks.append(Check("inherited-token", "Observe fake inherited environment token", "env",
-                        unsupported_reason="policy allows token inheritance; no denial is expected" if inherit_fake_token else ""))
-    checks.append(Check("tcp-off-host", "Outbound off-host TCP connect", "offhost",
-                        unsupported_reason="off-host network access is disallowed for this run"))
+                        expectation="env_visible",
+                        unsupported_reason="policy permits token inheritance; no absence claim" if inherit_fake_token else ""))
+    checks.append(Check("filtered-token", "Apply shell_environment_policy to fake token", "env_filtered",
+                        expectation="env_filtered"))
+    reason = "external route probes require explicit external_routes=true policy opt-in"
+    checks.append(Check("dns-lookup", "DNS lookup of public test hostname", "dns", expectation=route_expectation,
+                        unsupported_reason="network=false; " + reason if not network else ("" if external_routes else reason)))
+    checks.append(Check("tcp-off-host", "Outbound off-host TCP connect", "offhost", expectation=route_expectation,
+                        unsupported_reason="network=false; " + reason if not network else ("" if external_routes else reason)))
     return checks

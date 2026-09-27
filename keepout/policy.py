@@ -14,6 +14,7 @@ class Policy:
     writable_paths: tuple[str, ...]
     network: bool
     inherit_fake_token: bool
+    external_routes: bool = False
 
 
 def _paths(value: object, field: str) -> tuple[str, ...]:
@@ -47,8 +48,8 @@ def load_policy(path: str | Path) -> Policy:
     if not isinstance(data, dict):
         raise ValueError("policy must be an object")
     expected = {"protected_paths", "writable_paths", "network", "inherit_fake_token"}
-    if set(data) != expected:
-        raise ValueError(f"policy fields must be exactly: {', '.join(sorted(expected))}")
+    if not expected.issubset(data) or set(data) - (expected | {"external_routes"}):
+        raise ValueError(f"policy fields must be: {', '.join(sorted(expected))}; optional: external_routes")
     protected = _paths(data["protected_paths"], "protected_paths")
     writable = _paths(data["writable_paths"], "writable_paths")
     if "work" not in writable:
@@ -59,4 +60,7 @@ def load_policy(path: str | Path) -> Policy:
                 raise ValueError("protected and writable paths must not overlap")
     if type(data["network"]) is not bool or type(data["inherit_fake_token"]) is not bool:
         raise ValueError("network and inherit_fake_token must be booleans")
-    return Policy(protected, writable, data["network"], data["inherit_fake_token"])
+    external = data.get("external_routes", False)
+    if type(external) is not bool or (external and not data["network"]):
+        raise ValueError("external_routes must be a boolean and requires network=true")
+    return Policy(protected, writable, data["network"], data["inherit_fake_token"], external)

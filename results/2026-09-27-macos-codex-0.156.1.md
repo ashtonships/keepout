@@ -1,5 +1,7 @@
 # Keepout result
 
+**Historical label note:** The `inherited-token` FAIL below is superseded by round 2's EXPECTED-VISIBLE verdict. This run injected a fake token without an environment filter; Codex sandbox file and network rules do not promise to remove inherited variables. This file preserves the original observation and label.
+
 - Harness: `codex sandbox named permission profile`
 - CLI: `codex-cli 0.156.1`
 - OS: `macOS-27.0-arm64-arm-64bit-Mach-O`

@@ -1,4 +1,5 @@
 {
+  "superseded_note": "The inherited-token FAIL label is superseded by round 2 EXPECTED-VISIBLE: this run injected a fake token without an environment filter, and file/network sandbox rules do not promise to remove inherited variables.",
   "checks": [
     {
       "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",

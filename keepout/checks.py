@@ -52,8 +52,18 @@ def evaluate(check: Check, runner: Runner) -> dict[str, str]:
     return _result(check, verdict, control.evidence, reason)
 
 
+HELD = ("pending_review", "suspected_undocumented_bypass")
+
+
 def _result(check: Check, verdict: str, control: str, sandbox: str) -> dict[str, str]:
-    classification = "documented_behavior" if check.expectation == "env_visible" else "configuration_outcome"
+    # A new denial FAIL is held by default: its evidence is withheld until a person reviews it and reclassifies it
+    # (documented behaviour or configuration outcome) or reports it privately to the vendor.
+    if check.expectation == "env_visible":
+        classification = "documented_behavior"
+    elif check.expectation == "deny" and verdict == "FAIL":
+        classification = "pending_review"
+    else:
+        classification = "configuration_outcome"
     return {
         "id": check.id,
         "description": check.description,
@@ -67,7 +77,7 @@ def _result(check: Check, verdict: str, control: str, sandbox: str) -> dict[str,
 
 def public_result(result: dict[str, str]) -> dict[str, str]:
     """The publication boundary for future automated results."""
-    if result.get("classification") != "suspected_undocumented_bypass":
+    if result.get("classification") not in HELD:
         return dict(result)
     safe = dict(result)
     safe["id"] = "suspected-bypass"

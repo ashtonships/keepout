@@ -116,6 +116,19 @@ class VerdictTests(unittest.TestCase):
         for secret in ("private path", "private recipe", "secret control", "secret bypass"):
             self.assertNotIn(secret, saved)
 
+    def test_new_denial_fail_is_held_by_default(self):
+        from keepout.checks import Check, Observation, evaluate, public_result
+
+        class Leaky:
+            def run(self, check, sandboxed):
+                return Observation("EXPOSED", "raw exploit detail")
+
+        result = evaluate(Check("deny-read", "read a canary", "read", expectation="deny"), Leaky())
+        self.assertEqual((result["verdict"], result["classification"]), ("FAIL", "pending_review"))
+        public = public_result(result)
+        self.assertNotIn("raw exploit detail", str(public))
+        self.assertIn("held for private vendor report", str(public))
+
     def test_summary_excludes_expected_visible_from_enforcement_failures(self):
         report = {"rule_omission": {"verdict": "PASS"},
                   "checks": [{"id": "allowed-read", "expectation": "allow", "verdict": "PASS"},

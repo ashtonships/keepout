@@ -9,7 +9,7 @@ import platform
 from .checks import evaluate, invalidate_denials, make_checks
 from .codex import CodexRunner
 from .policy import load_policy
-from .report import markdown, write_report
+from .report import markdown, summary, write_report
 
 
 def main() -> int:
@@ -54,7 +54,8 @@ def main() -> int:
     }
     write_report(report, args.json, args.md)
     print(markdown(report))
-    return 0
+    totals = summary(report)
+    return 1 if totals["FAIL"] or totals["INVALID"] or omission["verdict"] != "PASS" else 0
 
 
 if __name__ == "__main__":

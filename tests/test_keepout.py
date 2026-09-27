@@ -6,7 +6,7 @@ import unittest
 from keepout.checks import Check, Observation, evaluate, invalidate_denials, make_checks
 from keepout.codex import CodexRunner
 from keepout.policy import Policy, load_policy
-from keepout.report import write_report
+from keepout.report import summary, write_report
 
 
 class FakeRunner:
@@ -92,18 +92,38 @@ class VerdictTests(unittest.TestCase):
         runner.run = lambda check, sandboxed, profile_override=None: Observation(
             "EXPOSED" if not sandboxed else "BLOCKED", "evidence")
         self.assertEqual(runner.rule_omission()["verdict"], "INVALID")
+        denial = evaluate(Check("secret", "secret", "shell_read"), FakeRunner("EXPOSED", "BLOCKED"))
+        self.assertEqual(invalidate_denials([denial], omission_ok=False)[0]["verdict"], "INVALID")
 
     def test_suspected_bypass_evidence_is_withheld_on_write(self):
-        report = {"checks": [{"id": "private path", "description": "private recipe",
+        report = {"harness": "test", "cli_version": "test", "os": "test", "date": "test",
+                  "profile_receipt": {"generated_profile_network_mode": "limited",
+                                      "codex_effective_profile_readback": "unavailable",
+                                      "strict_config": "rejected",
+                                      "config_overrides": [], "environment_override_scope": "test"},
+                  "rule_omission": {"verdict": "PASS", "probe_verdict_without_rule": "FAIL",
+                                    "omitted_profile_override": "test"},
+                  "checks": [{"id": "private path", "description": "private recipe",
+                              "expectation": "deny", "verdict": "FAIL",
                               "classification": "suspected_undocumented_bypass",
                               "control_evidence": "secret control", "sandbox_evidence": "secret bypass"}]}
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "report.json"
-            write_report(report, str(path), None)
-            saved = path.read_text()
+            json_path = Path(directory) / "report.json"
+            md_path = Path(directory) / "report.md"
+            write_report(report, str(json_path), str(md_path))
+            saved = json_path.read_text() + md_path.read_text()
         self.assertIn("held for private vendor report", saved)
         for secret in ("private path", "private recipe", "secret control", "secret bypass"):
             self.assertNotIn(secret, saved)
+
+    def test_summary_excludes_expected_visible_from_enforcement_failures(self):
+        report = {"rule_omission": {"verdict": "PASS"},
+                  "checks": [{"id": "allowed-read", "expectation": "allow", "verdict": "PASS"},
+                             {"id": "inherited-token", "expectation": "env_visible",
+                              "verdict": "EXPECTED-VISIBLE"}]}
+        totals = summary(report)
+        self.assertEqual(totals["enforcement_failures"], 0)
+        self.assertEqual(totals["EXPECTED-VISIBLE"], 1)
 
 
 class PolicyTests(unittest.TestCase):

@@ -80,11 +80,10 @@ def public_result(result: dict[str, str]) -> dict[str, str]:
 
 def invalidate_denials(checks: list[dict[str, str]], omission_ok: bool = True) -> list[dict[str, str]]:
     failed = [check["id"] for check in checks if check["id"].startswith("allowed-") and check["verdict"] != "PASS"]
-    if not omission_ok:
-        failed.append("omitted-rule")
-    if not failed:
+    if not failed and omission_ok:
         return checks
-    reason = "sandbox blocked allowed actions; denials prove nothing (" + ", ".join(failed) + ")"
+    reason = ("sandbox blocked allowed actions; denials prove nothing (" + ", ".join(failed) + ")"
+              if failed else "omitted-rule control failed; denials prove nothing")
     return [dict(check, verdict="INVALID", sandbox_evidence=reason) if check["expectation"] == "deny" else check
             for check in checks]
 

@@ -1,0 +1,126 @@
+{
+  "checks": [
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Shell read of home/.ssh",
+      "id": "read-shell:home/.ssh",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/home/.ssh/id_test: Operation not permitted'",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Python read of home/.ssh",
+      "id": "read-python:home/.ssh",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Shell read of home/.config/codex",
+      "id": "read-shell:home/.config/codex",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/home/.config/codex/settings.toml: Operation not permitted'",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Python read of home/.config/codex",
+      "id": "read-python:home/.config/codex",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Shell read of home/.config/secrets",
+      "id": "read-shell:home/.config/secrets",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/home/.config/secrets/credentials: Operation not permitted'",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Python read of home/.config/secrets",
+      "id": "read-python:home/.config/secrets",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Shell read of protected",
+      "id": "read-shell:protected",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/protected/marker.txt: Operation not permitted'",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Python read of protected",
+      "id": "read-python:protected",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Read protected canary through writable symlink",
+      "id": "read-symlink",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/work/protected-link: Operation not permitted'",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Write agent's fake config folder",
+      "id": "write-config",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Write outside declared writable paths",
+      "id": "write-outside",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to owned 127.0.0.1 listener",
+      "id": "tcp-loopback",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to owned Unix socket",
+      "id": "unix-socket",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Observe fake inherited environment token",
+      "id": "inherited-token",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "verdict": "FAIL"
+    },
+    {
+      "control_evidence": "not run",
+      "description": "Outbound off-host TCP connect",
+      "id": "tcp-off-host",
+      "sandbox_evidence": "off-host network access is disallowed for this run",
+      "verdict": "UNMEASURED"
+    }
+  ],
+  "cli_version": "codex-cli 0.156.1",
+  "date": "2026-09-27T13:57:43+00:00",
+  "harness": "codex sandbox named permission profile",
+  "os": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "policy": {
+    "inherit_fake_token": false,
+    "network": false,
+    "protected_paths": [
+      "home/.ssh",
+      "home/.config/codex",
+      "home/.config/secrets",
+      "protected"
+    ],
+    "writable_paths": [
+      "work"
+    ]
+  }
+}

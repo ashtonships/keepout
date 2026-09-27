@@ -1,0 +1,10 @@
+# Paths are relative to Keepout's disposable root. No real home path is used.
+protected_paths = [
+  "home/.ssh",
+  "home/.config/codex",
+  "home/.config/secrets",
+  "protected",
+]
+writable_paths = ["work"]
+network = false
+inherit_fake_token = false

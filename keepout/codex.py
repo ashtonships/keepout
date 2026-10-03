@@ -82,6 +82,24 @@ def find_codex() -> str:
     return cli
 
 
+def cli_version(cli: str | None = None) -> str:
+    """`codex --version` in a throwaway HOME. Never a shell, never `codex update`."""
+    binary = cli or find_codex()
+    with tempfile.TemporaryDirectory(prefix="keepout-ver-", dir="/private/tmp") as name:
+        root = Path(name).resolve()
+        home = root / "home"
+        codex_home = home / ".config" / "codex"
+        for folder in (home, codex_home, root / "tmp"):
+            folder.mkdir(parents=True, exist_ok=True)
+        env = {"PATH": "/usr/bin:/bin:/opt/homebrew/bin", "HOME": str(home), "CODEX_HOME": str(codex_home),
+               "TMPDIR": str(root / "tmp"), "LANG": "en_US.UTF-8"}
+        result = subprocess.run([binary, "--version"], cwd=root, env=env, capture_output=True, text=True,
+                                timeout=10)
+        if result.returncode != 0:
+            raise RuntimeError(f"codex --version failed with exit {result.returncode}")
+        return result.stdout.strip()
+
+
 class CodexRunner:
     def __init__(self, policy: Policy, cli: str | None = None):
         self.policy = policy

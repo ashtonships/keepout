@@ -1,0 +1,6 @@
+# KO050: :workspace also grants writes to /tmp and $TMPDIR (measured banner).
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+extends = ":workspace"

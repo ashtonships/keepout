@@ -1,0 +1,9 @@
+# KO031: a ~/ path resolves against the Codex process's $HOME (measured).
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"
+
+[permissions.p.filesystem]
+"~/.ssh" = "deny"

@@ -37,7 +37,33 @@ The inherited-token check is an environment observation, not a sandbox file or n
 
 The [September 27 round 2 macOS result](results/2026-09-27b-macos-codex-0.156.1.md) records Codex CLI 0.156.1 with the bundled policy. Its verdict counts and redacted profile receipt are in the result. The [earlier run](results/2026-09-27-macos-codex-0.156.1.md) remains for history; its inherited-token `FAIL` label is superseded because token inheritance is expected without an environment filter.
 
-v0 sends direct shell and Python commands through `codex sandbox`. It does **not** run a model turn, agent tools, browser or connector tools, or real credentials. It does not verify an existing user's Codex configuration. It does not test Claude Code or Linux. DNS and off-host TCP are unmeasured with the bundled policy. A PASS says only that the listed action behaved as observed under this generated profile.
+v0 sends direct shell and Python commands through `codex sandbox`. It does **not** run a model turn, agent tools, browser or connector tools, or real credentials. It does not verify an existing user's Codex configuration. It does not test Linux. The Claude Code harness below tests only the open-source sandbox-runtime CLI. DNS and off-host TCP are unmeasured with the bundled policy. A PASS says only that the listed action behaved as observed under this generated profile.
+
+## Claude Code harness
+
+Scope: **sandbox-runtime srt <version> (the open-source sandbox Claude Code builds on). Not Claude Code's bundled copy, not a model turn.** Claude Code 2.1.288 has no `claude sandbox` subcommand, and its bundled sandbox-runtime copy (version not exposed) and the layers Claude Code adds on top can only be reached through a model turn, so they are reported as UNMEASURED. macOS (Seatbelt) only; the Linux bubblewrap path is UNMEASURED.
+
+The harness runs the same checks, controls, omitted-rule check and disclosure hold as the Codex harness. It writes srt settings files at the disposable root (never writable): `denyRead` for protected paths, `allowWrite` for writable paths, `allowedDomains: []`, and `allowLocalBinding`/`allowAllUnixSockets` set from the policy's `network`. The filtered-token variant adds `credentials.envVars` with `mode: "deny"` for the fake token. It always passes `--settings`, so srt never reads a real `~/.srt-settings.json`; HOME, TMPDIR and `CLAUDE_CODE_TMPDIR` point into the disposable root. If srt rejects a settings file, the probe is ERROR (never a denial PASS). With `network = true`, DNS and off-host TCP are UNMEASURED: srt has no full-network mode (`allowedDomains: ["*"]` is rejected) and direct-socket probes bypass its proxy. srt always allows writes to stdio, `/tmp/claude`, `/private/tmp/claude`, and `~/.npm/_logs`, `~/.claude/debug` under the fake HOME.
+
+Install srt without running package scripts (Node.js required; nothing is downloaded at run time):
+
+```sh
+npm install --ignore-scripts --no-audit --no-fund --prefix "$TMPDIR/keepout-srt" @anthropic-ai/sandbox-runtime@0.0.78
+KEEPOUT_SRT="$TMPDIR/keepout-srt/node_modules/@anthropic-ai/sandbox-runtime/dist/cli.js" \
+  python3 -m keepout run --harness claude --policy policy.toml --json results/local.json --md results/local.md
+```
+
+`KEEPOUT_SRT` may also name the `.bin/srt` shim; otherwise `srt` on `PATH` is used. Setting `KEEPOUT_SRT` also enables a live test in `python3 -m unittest`.
+
+Not reachable without a model turn (UNMEASURED):
+
+- claude permissions.deny Read()/Edit() merged into sandbox
+- Claude Code protected paths (.claude, .mcp.json, .git hooks/config, ~/.claude)
+- excludedCommands / allowUnsandboxedCommands / dangerouslyDisableSandbox retry
+- CLAUDE_CODE_SUBPROCESS_ENV_SCRUB
+- failIfUnavailable
+- Read/Edit/WebFetch tools, hooks, MCP (outside sandbox by design)
+- Claude Code bundled sandbox-runtime version (not exposed)
 
 ## Disclosure
 

@@ -45,12 +45,15 @@ def markdown(report: dict) -> str:
         f"- Strict config: {report['profile_receipt']['strict_config']}",
         f"- Omitted-rule fail-closed check: {report['rule_omission']['verdict']} "
         f"(probe without rule: {report['rule_omission']['probe_verdict_without_rule']})",
-        f"- Omitted-rule -c override: `{report['rule_omission']['omitted_profile_override']}`",
+        f"- Omitted-rule configuration: `{report['rule_omission']['omitted_profile_override']}`",
+        *[f"- {label}: {report['profile_receipt'][key]}" for key, label in (
+            ("node_version", "Node"), ("platform_scope", "Platform scope"),
+            ("default_writable_note", "Default writable paths")) if key in report["profile_receipt"]],
         "",
         "Allowed-action controls run inside the sandbox. A denial PASS also requires an exposed unsandboxed control. "
         "If any allowed action fails, all denial verdicts are INVALID.",
         "",
-        "## Generated -c overrides (temporary paths redacted)",
+        "## Generated configuration (temporary paths redacted)",
         "",
         *["- `" + item.replace("`", "") + "`" for item in report["profile_receipt"]["config_overrides"]],
         "- Environment override scope: " + report["profile_receipt"]["environment_override_scope"],
@@ -62,6 +65,9 @@ def markdown(report: dict) -> str:
         cells = (check["id"], check["verdict"], check["classification"],
                  check["control_evidence"], check["sandbox_evidence"])
         lines.append("| " + " | ".join(str(cell).replace("|", "\\|").replace("\n", " ") for cell in cells) + " |")
+    if report.get("unreachable"):
+        lines.extend(["", "## Not reachable without a model turn (UNMEASURED)", ""])
+        lines.extend("- " + item for item in report["unreachable"])
     return "\n".join(lines) + "\n"
 
 

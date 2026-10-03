@@ -48,7 +48,8 @@ def evaluate(check: Check, runner: Runner) -> dict[str, str]:
         verdict = {"BLOCKED": "PASS", "EXPOSED": "FAIL"}.get(sandbox.state, "UNMEASURED")
     reason = sandbox.evidence
     if check.expectation == "env_filtered" and sandbox.state == "EXPOSED":
-        reason = "codex sandbox did not apply shell_environment_policy; variable remained visible"
+        reason = getattr(runner, "env_filter_miss",
+                         "codex sandbox did not apply shell_environment_policy; variable remained visible")
     return _result(check, verdict, control.evidence, reason)
 
 

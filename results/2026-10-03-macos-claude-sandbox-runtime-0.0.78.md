@@ -3,16 +3,16 @@
 - Harness: `sandbox-runtime srt 0.0.78 (the open-source sandbox Claude Code builds on). Not Claude Code's bundled copy, not a model turn.`
 - CLI: `srt 0.0.78`
 - OS: `macOS-27.0.1-arm64-arm-64bit-Mach-O`
-- Run time (UTC): `2026-10-03T16:48:31+00:00`
+- Run time (UTC): `2026-10-03T16:52:54+00:00`
 - Summary: controls passed; PASS 17, FAIL 0, INVALID 0, UNMEASURED 2, EXPECTED-VISIBLE 1; enforcement failures 0
 - Generated network mode: `proxy-only, allowedDomains=[], localBinding=False, allUnixSockets=False`
 - Effective profile readback: unavailable: srt 0.0.78 has no effective-config readback; Claude Code's bundled copy not tested
-- Strict config: rejects invalid settings (exit 1)
+- Strict config: rejects invalid settings (allowedDomains '*' in otherwise valid settings; exit 1)
 - Omitted-rule fail-closed check: PASS (probe without rule: FAIL)
 - Omitted-rule configuration: `{"filesystem": {"allowRead": [], "allowWrite": ["<temp>/work"], "denyRead": ["<temp>/home/.config/codex", "<temp>/home/.config/secrets", "<temp>/protected"], "denyWrite": []}, "network": {"allowAllUnixSockets": false, "allowLocalBinding": false, "allowedDomains": [], "deniedDomains": []}}`
 - Node: v22.23.1
 - Platform scope: macOS Seatbelt only; the Linux bubblewrap path is UNMEASURED
-- Default writable paths: srt always allows writes to stdio, /tmp/claude, /private/tmp/claude, and ~/.npm/_logs, ~/.claude/debug under the fake HOME
+- Default writable paths: srt always allows writes to stdio, /tmp/claude and /private/tmp/claude, and to ~/.npm/_logs and ~/.claude/debug under the fake HOME unless a denyRead entry covers them
 
 Allowed-action controls run inside the sandbox. A denial PASS also requires an exposed unsandboxed control. If any allowed action fails, all denial verdicts are INVALID.
 

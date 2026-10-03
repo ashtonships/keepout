@@ -114,6 +114,34 @@ class ClassificationTests(unittest.TestCase):
         self.assertIn("srt credentials.envVars", result["sandbox_evidence"])
 
 
+    def test_settings_file_routing(self):
+        runner = bare_runner()
+        runner.settings_file = runner.root / "srt-settings.json"
+        runner.env_settings_file = runner.root / "srt-settings-env.json"
+        result = subprocess.CompletedProcess([], 0, "BLOCKED", "")
+        with mock.patch("keepout.probes.subprocess.run", return_value=result) as run:
+            runner.run(Check("f", "f", "env_filtered", expectation="env_filtered"), True)
+            self.assertEqual(run.call_args.args[0][3], str(runner.env_settings_file))
+            runner.run(Check("o", "o", "allowed_command"), True, runner.root / "srt-settings-omit.json")
+            self.assertEqual(run.call_args.args[0][3], str(runner.root / "srt-settings-omit.json"))
+
+    def test_strict_config_isolates_wildcard_rejection(self):
+        runner = bare_runner()
+        runner.settings = runner._settings()
+        written = {}
+        runner._write_settings = lambda name, settings: written.setdefault(name, settings) and runner.root / name
+        rejected = subprocess.CompletedProcess([], 1, "", "Error: x does not hold a valid config — "
+                                               "network.allowedDomains.0: Invalid domain pattern\nRefusing to run")
+        with mock.patch("keepout.claude.subprocess.run", return_value=rejected):
+            self.assertTrue(runner.strict_config_status().startswith("rejects invalid settings"))
+        invalid = written["srt-settings-invalid.json"]
+        self.assertEqual(invalid["network"]["allowedDomains"], ["*"])
+        self.assertEqual(invalid["filesystem"], runner.settings["filesystem"])
+        other = subprocess.CompletedProcess([], 1, "", "Error: x does not hold a valid config — filesystem: Required")
+        with mock.patch("keepout.claude.subprocess.run", return_value=other):
+            self.assertFalse(runner.strict_config_status().startswith("rejects"))
+
+
 class AdjustTests(unittest.TestCase):
     def test_network_true_marks_external_routes_unmeasured(self):
         checks = make_checks(PROTECTED, True, False, True)
@@ -151,6 +179,12 @@ class RedactionTests(unittest.TestCase):
         for secret in (str(runner.root), runner.marker, runner.token, "keepout-srt"):
             self.assertNotIn(secret, receipt)
         self.assertEqual(runner.receipt()["unreachable_without_model_turn"], UNREACHABLE)
+
+
+    def test_unresolved_temp_spellings_are_redacted(self):
+        runner = bare_runner()
+        cleaned = runner._clean("/tmp/keepout-test/a /var/folders/x/T/keepout-srt/b")
+        self.assertEqual(cleaned, "<temp>/a <srt>/b")
 
 
 class CliTests(unittest.TestCase):

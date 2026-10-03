@@ -182,7 +182,7 @@
     }
   ],
   "cli_version": "srt 0.0.78",
-  "date": "2026-10-03T16:48:31+00:00",
+  "date": "2026-10-03T16:52:54+00:00",
   "harness": "sandbox-runtime srt 0.0.78 (the open-source sandbox Claude Code builds on). Not Claude Code's bundled copy, not a model turn.",
   "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
   "policy": {
@@ -205,14 +205,14 @@
       "{\"filesystem\": {\"allowRead\": [], \"allowWrite\": [\"<temp>/work\"], \"denyRead\": [\"<temp>/home/.ssh\", \"<temp>/home/.config/codex\", \"<temp>/home/.config/secrets\", \"<temp>/protected\"], \"denyWrite\": []}, \"network\": {\"allowAllUnixSockets\": false, \"allowLocalBinding\": false, \"allowedDomains\": [], \"deniedDomains\": []}}",
       "{\"credentials\": {\"envVars\": [{\"mode\": \"deny\", \"name\": \"KEEPOUT_FAKE_TOKEN\"}]}, \"filesystem\": {\"allowRead\": [], \"allowWrite\": [\"<temp>/work\"], \"denyRead\": [\"<temp>/home/.ssh\", \"<temp>/home/.config/codex\", \"<temp>/home/.config/secrets\", \"<temp>/protected\"], \"denyWrite\": []}, \"network\": {\"allowAllUnixSockets\": false, \"allowLocalBinding\": false, \"allowedDomains\": [], \"deniedDomains\": []}}"
     ],
-    "default_writable_note": "srt always allows writes to stdio, /tmp/claude, /private/tmp/claude, and ~/.npm/_logs, ~/.claude/debug under the fake HOME",
+    "default_writable_note": "srt always allows writes to stdio, /tmp/claude and /private/tmp/claude, and to ~/.npm/_logs and ~/.claude/debug under the fake HOME unless a denyRead entry covers them",
     "environment_override_scope": "filtered-token only (credentials.envVars deny)",
     "generated_profile_network_mode": "proxy-only, allowedDomains=[], localBinding=False, allUnixSockets=False",
     "node_version": "v22.23.1",
     "platform_scope": "macOS Seatbelt only; the Linux bubblewrap path is UNMEASURED",
     "sandbox_exec": true,
     "srt_version": "srt 0.0.78",
-    "strict_config": "rejects invalid settings (exit 1)",
+    "strict_config": "rejects invalid settings (allowedDomains '*' in otherwise valid settings; exit 1)",
     "unreachable_without_model_turn": [
       "claude permissions.deny Read()/Edit() merged into sandbox",
       "Claude Code protected paths (.claude, .mcp.json, .git hooks/config, ~/.claude)",

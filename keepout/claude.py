@@ -165,15 +165,18 @@ class ClaudeRunner(DisposableRoot):
         return result.stdout.strip() if result.returncode == 0 else "unknown"
 
     def strict_config_status(self) -> str:
-        invalid = self._write_settings("srt-settings-invalid.json", {"network": {"allowedDomains": ["*"]}})
+        # The main settings with one change, so a rejection is attributable to allowedDomains '*' alone.
+        invalid_settings = json.loads(json.dumps(self.settings))
+        invalid_settings["network"]["allowedDomains"] = ["*"]
+        invalid = self._write_settings("srt-settings-invalid.json", invalid_settings)
         command = [self.node, self.srt, "--settings", str(invalid), "--", "/bin/echo", "EXPOSED"]
         try:
             result = subprocess.run(command, cwd=self.work, env=self.env, capture_output=True, text=True, timeout=12)
         except (OSError, subprocess.TimeoutExpired) as exc:
             return f"unmeasured: {type(exc).__name__}"
         if (("Refusing to run" in result.stderr or "does not hold a valid config" in result.stderr)
-                and "EXPOSED" not in result.stdout):
-            return f"rejects invalid settings (exit {result.returncode})"
+                and "allowedDomains" in result.stderr and "EXPOSED" not in result.stdout):
+            return f"rejects invalid settings (allowedDomains '*' in otherwise valid settings; exit {result.returncode})"
         return self._clean(f"exit {result.returncode}; stdout={result.stdout[:60]!r}; stderr={result.stderr[:180]!r}")
 
     def receipt(self) -> dict[str, object]:
@@ -190,8 +193,9 @@ class ClaudeRunner(DisposableRoot):
             "srt_version": self.version(),
             "node_version": self.node_version(),
             "sandbox_exec": Path("/usr/bin/sandbox-exec").exists(),
-            "default_writable_note": ("srt always allows writes to stdio, /tmp/claude, /private/tmp/claude, and "
-                                      "~/.npm/_logs, ~/.claude/debug under the fake HOME"),
+            "default_writable_note": ("srt always allows writes to stdio, /tmp/claude and /private/tmp/claude, and "
+                                      "to ~/.npm/_logs and ~/.claude/debug under the fake HOME unless a denyRead "
+                                      "entry covers them"),
             "platform_scope": "macOS Seatbelt only; the Linux bubblewrap path is UNMEASURED",
             "unreachable_without_model_turn": list(UNREACHABLE),
         }
@@ -204,4 +208,9 @@ class ClaudeRunner(DisposableRoot):
         return str(path.parent)
 
     def _clean(self, value: str) -> str:
-        return super()._clean(value.replace(self._srt_dir(), "<srt>"))
+        # srt and sandbox-exec may print the unresolved /var or /tmp spelling of a resolved /private path.
+        for path, label in ((self._srt_dir(), "<srt>"), (str(self.root), "<temp>")):
+            value = value.replace(path, label)
+            if path.startswith("/private/"):
+                value = value.replace(path.removeprefix("/private"), label)
+        return super()._clean(value)

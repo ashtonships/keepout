@@ -136,7 +136,11 @@ def _version_key(cli_version: str) -> tuple:
 
 
 def short_harness(harness: str) -> str:
-    return "codex" if harness.startswith("codex") else harness
+    if harness.startswith("codex"):
+        return "codex"
+    if harness.startswith("sandbox-runtime"):
+        return "Claude Code sandbox (srt)"  # the full caveat stays in the result file and the footer
+    return harness
 
 
 def short_os(os_name: str) -> str:
@@ -336,7 +340,7 @@ def render_html(model: dict) -> str:
         out.append("<p>No superseded or older runs.</p>")
     out.append(f'<p class="foot">{_e(SCOPE)} A run with any check held for private vendor review shows '
                "<em>held</em> in every denial cell, so the held check cannot be identified. "
-               "Legacy runs are never shown as control-validated.</p>")
+               "Legacy runs are never shown as control-validated. The Claude Code sandbox column is the open-source sandbox-runtime (srt) Claude Code builds on, run directly: not Claude Code's bundled copy and not a model turn.</p>")
     out += ["</main>", "</body>", "</html>", ""]
     return "\n".join(out)
 

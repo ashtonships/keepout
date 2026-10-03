@@ -4,7 +4,7 @@ Each result applies only to the tested CLI version, policy, machine and routes. 
 
 Keepout results — 4 runs, generated from 4 files.
 
-| check | codex 0.156.1 macOS 27.0 2026-09-27 | codex 0.156.1 macOS 27.0.1 2026-10-03 | sandbox-runtime srt 0.0.78 (the open-source sandbox Claude Code builds on). Not Claude Code's bundled copy, not a model turn. 0.0.78 macOS 27.0.1 2026-10-03 |
+| check | codex 0.156.1 macOS 27.0 2026-09-27 | codex 0.156.1 macOS 27.0.1 2026-10-03 | Claude Code sandbox (srt) 0.0.78 macOS 27.0.1 2026-10-03 |
 | --- | --- | --- | --- |
 | controls: allowed actions | PASS | PASS | PASS |
 | controls: omitted-rule fail-closed | PASS | PASS | PASS |
@@ -95,7 +95,7 @@ Keepout results — 4 runs, generated from 4 files.
 </details>
 
 <details>
-<summary>sandbox-runtime srt 0.0.78 (the open-source sandbox Claude Code builds on). Not Claude Code&#x27;s bundled copy, not a model turn. 0.0.78 macOS 27.0.1 2026-10-03</summary>
+<summary>Claude Code sandbox (srt) 0.0.78 macOS 27.0.1 2026-10-03</summary>
 
 | check | verdict | classification | control evidence | sandbox evidence |
 | --- | --- | --- | --- | --- |

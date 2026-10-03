@@ -194,9 +194,9 @@ class PolicyTests(unittest.TestCase):
         runner = CodexRunner.__new__(CodexRunner)
         runner.root = Path("/private/tmp/keepout-test")
         runner.policy = Policy(("home/.ssh",), ("work",), False, False)
-        self.assertIn('network = { mode = "limited" }', runner._profile())
+        self.assertIn('network = { enabled = false }', runner._profile())
         runner.policy = Policy(("home/.ssh",), ("work",), True, False)
-        self.assertIn('network = { mode = "full" }', runner._profile())
+        self.assertIn('network = { enabled = true }', runner._profile())
 
 
 if __name__ == "__main__":

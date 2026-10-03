@@ -33,7 +33,7 @@ Keepout results — 4 runs, generated from 4 files.
 ## Runs
 
 - `2026-09-27b-macos-codex-0.156.1.json`; harness: codex sandbox named permission profile; CLI: codex-cli 0.156.1; OS: macOS-27.0-arm64-arm-64bit-Mach-O; date: 2026-09-27T14:21:23+00:00; status: controls passed; generated network mode: limited; held: 0
-- `2026-10-03-macos-codex-0.156.1.json`; harness: codex sandbox named permission profile; CLI: codex-cli 0.156.1; OS: macOS-27.0.1-arm64-arm-64bit-Mach-O; date: 2026-10-03T16:46:50+00:00; status: controls passed; generated network mode: limited; held: 0
+- `2026-10-03-macos-codex-0.156.1.json`; harness: codex sandbox named permission profile; CLI: codex-cli 0.156.1; OS: macOS-27.0.1-arm64-arm-64bit-Mach-O; date: 2026-10-03T17:40:51+00:00; status: controls passed; generated network mode: network.enabled=false; held: 0
 - `2026-10-03-macos-claude-sandbox-runtime-0.0.78.json`; harness: sandbox-runtime srt 0.0.78 (the open-source sandbox Claude Code builds on). Not Claude Code's bundled copy, not a model turn.; CLI: srt 0.0.78; OS: macOS-27.0.1-arm64-arm-64bit-Mach-O; date: 2026-10-03T16:52:54+00:00; status: controls passed; generated network mode: proxy-only, allowedDomains=[], localBinding=False, allUnixSockets=False; held: 0
 
 ## Evidence

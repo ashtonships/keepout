@@ -3,19 +3,19 @@
 - Harness: `codex sandbox named permission profile`
 - CLI: `codex-cli 0.156.1`
 - OS: `macOS-27.0.1-arm64-arm-64bit-Mach-O`
-- Run time (UTC): `2026-10-03T16:46:50+00:00`
+- Run time (UTC): `2026-10-03T17:40:51+00:00`
 - Summary: controls passed; PASS 17, FAIL 0, INVALID 0, UNMEASURED 2, EXPECTED-VISIBLE 1; enforcement failures 0
-- Generated network mode: `limited`
+- Generated network setting: `network.enabled=false`
 - Effective profile readback: unavailable: codex sandbox 0.156.1 has no effective-profile display
 - Strict config: rejected: --strict-config is not supported for codex sandbox
 - Omitted-rule fail-closed check: PASS (probe without rule: FAIL)
-- Omitted-rule -c override: `permissions.keepout={ extends = ":read-only", network = { mode = "limited" }, filesystem = { "<temp>/home/.config/codex" = "deny", "<temp>/home/.config/secrets" = "deny", "<temp>/protected" = "deny", "<temp>/work" = "write" } }`
+- Omitted-rule configuration: `permissions.keepout={ extends = ":read-only", network = { enabled = false }, filesystem = { "<temp>/home/.config/codex" = "deny", "<temp>/home/.config/secrets" = "deny", "<temp>/protected" = "deny", "<temp>/work" = "write" } }`
 
 Allowed-action controls run inside the sandbox. A denial PASS also requires an exposed unsandboxed control. If any allowed action fails, all denial verdicts are INVALID.
 
-## Generated -c overrides (temporary paths redacted)
+## Generated configuration (temporary paths redacted)
 
-- `permissions.keepout={ extends = ":read-only", network = { mode = "limited" }, filesystem = { "<temp>/home/.ssh" = "deny", "<temp>/home/.config/codex" = "deny", "<temp>/home/.config/secrets" = "deny", "<temp>/protected" = "deny", "<temp>/work" = "write" } }`
+- `permissions.keepout={ extends = ":read-only", network = { enabled = false }, filesystem = { "<temp>/home/.ssh" = "deny", "<temp>/home/.config/codex" = "deny", "<temp>/home/.config/secrets" = "deny", "<temp>/protected" = "deny", "<temp>/work" = "write" } }`
 - `shell_environment_policy.inherit=none`
 - Environment override scope: filtered-token only
 

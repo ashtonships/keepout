@@ -182,7 +182,7 @@
     }
   ],
   "cli_version": "codex-cli 0.156.1",
-  "date": "2026-10-03T16:46:50+00:00",
+  "date": "2026-10-03T17:40:51+00:00",
   "harness": "codex sandbox named permission profile",
   "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
   "policy": {
@@ -202,16 +202,16 @@
   "profile_receipt": {
     "codex_effective_profile_readback": "unavailable: codex sandbox 0.156.1 has no effective-profile display",
     "config_overrides": [
-      "permissions.keepout={ extends = \":read-only\", network = { mode = \"limited\" }, filesystem = { \"<temp>/home/.ssh\" = \"deny\", \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
+      "permissions.keepout={ extends = \":read-only\", network = { enabled = false }, filesystem = { \"<temp>/home/.ssh\" = \"deny\", \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
       "shell_environment_policy.inherit=none"
     ],
     "environment_override_scope": "filtered-token only",
-    "generated_profile_network_mode": "limited",
+    "generated_profile_network_mode": "network.enabled=false",
     "strict_config": "rejected: --strict-config is not supported for codex sandbox"
   },
   "rule_omission": {
     "evidence": "exit 0; stdout='EXPOSED'; stderr=''",
-    "omitted_profile_override": "permissions.keepout={ extends = \":read-only\", network = { mode = \"limited\" }, filesystem = { \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
+    "omitted_profile_override": "permissions.keepout={ extends = \":read-only\", network = { enabled = false }, filesystem = { \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
     "probe_verdict_without_rule": "FAIL",
     "rule": "home/.ssh",
     "verdict": "PASS"

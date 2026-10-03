@@ -64,15 +64,18 @@ class CodexRunner(DisposableRoot):
             "LANG": "en_US.UTF-8",
         }
         self.profile = self._profile()
-        self.profile_network = tomllib.loads("profile = " + self.profile)["profile"]["network"]["mode"]
+        enabled = tomllib.loads("profile = " + self.profile)["profile"]["network"]["enabled"]
+        self.profile_network = f"network.enabled={str(enabled).lower()}"
         return self
 
     def _profile(self, omit: str | None = None) -> str:
         filesystem = {str(self.root / path): "deny" for path in self.policy.protected_paths if path != omit}
         filesystem.update({str(self.root / path): "write" for path in self.policy.writable_paths})
         entries = ", ".join(f"{json.dumps(key)} = {json.dumps(value)}" for key, value in filesystem.items())
-        network_mode = "full" if self.policy.network else "limited"
-        return f'{{ extends = ":read-only", network = {{ mode = "{network_mode}" }}, filesystem = {{ {entries} }} }}'
+        # Codex 0.156.1 reads network.enabled and silently ignores network.mode (measured 2026-10-03: mode="full"
+        # left loopback blocked, enabled=true opened it). v0 emitted mode, so its policy network=true never took.
+        enabled = "true" if self.policy.network else "false"
+        return f'{{ extends = ":read-only", network = {{ enabled = {enabled} }}, filesystem = {{ {entries} }} }}'
 
     def receipt(self) -> dict[str, object]:
         return {

@@ -40,7 +40,7 @@ def markdown(report: dict) -> str:
         f"- Summary: {totals['status']}; PASS {totals['PASS']}, FAIL {totals['FAIL']}, "
         f"INVALID {totals['INVALID']}, UNMEASURED {totals['UNMEASURED']}, "
         f"EXPECTED-VISIBLE {totals['EXPECTED-VISIBLE']}; enforcement failures {totals['enforcement_failures']}",
-        f"- Generated network mode: `{report['profile_receipt']['generated_profile_network_mode']}`",
+        f"- Generated network setting: `{report['profile_receipt']['generated_profile_network_mode']}`",
         f"- Effective profile readback: {report['profile_receipt']['codex_effective_profile_readback']}",
         f"- Strict config: {report['profile_receipt']['strict_config']}",
         f"- Omitted-rule fail-closed check: {report['rule_omission']['verdict']} "

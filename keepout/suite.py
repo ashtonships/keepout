@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import platform
-from typing import Callable
+from typing import Any, Callable
 
 from .checks import evaluate, invalidate_denials, make_checks
 from .codex import CodexRunner
@@ -26,16 +26,19 @@ def policy_dict(policy: Policy) -> dict[str, object]:
     }
 
 
-def run_suite(policy: Policy, runner_factory: Callable[[Policy], CodexRunner] = CodexRunner) -> dict:
+def run_suite(policy: Policy, runner_factory: Callable[[Policy], Any] = CodexRunner) -> dict:
     with runner_factory(policy) as runner:
         version = runner.version()
-        checks = [evaluate(check, runner) for check in make_checks(
-            policy.protected_paths, policy.network, policy.inherit_fake_token, policy.external_routes)]
+        planned = make_checks(policy.protected_paths, policy.network, policy.inherit_fake_token,
+                              policy.external_routes)
+        if hasattr(runner, "adjust"):
+            planned = runner.adjust(planned)
+        checks = [evaluate(check, runner) for check in planned]
         omission = runner.rule_omission()
         checks = invalidate_denials(checks, omission["verdict"] == "PASS")
         receipt = runner.receipt()
-    return {
-        "harness": HARNESS,
+    report = {
+        "harness": getattr(runner, "HARNESS", HARNESS).format(version=version),
         "cli_version": version,
         "os": platform.platform(),
         "date": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -44,6 +47,9 @@ def run_suite(policy: Policy, runner_factory: Callable[[Policy], CodexRunner] = 
         "rule_omission": omission,
         "checks": checks,
     }
+    if "unreachable_without_model_turn" in receipt:
+        report["unreachable"] = receipt["unreachable_without_model_turn"]
+    return report
 
 
 def exit_code(report: dict) -> int:

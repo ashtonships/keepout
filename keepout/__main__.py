@@ -11,11 +11,11 @@ from .policy import load_policy
 from .report import markdown, write_report
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="keepout")
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run", help="run disposable probes against a declared policy")
-    run.add_argument("--harness", choices=["codex"], required=True)
+    run.add_argument("--harness", choices=["codex", "claude"], required=True)
     run.add_argument("--policy", required=True)
     run.add_argument("--json", metavar="FILE")
     run.add_argument("--md", metavar="FILE")
@@ -30,6 +30,11 @@ def main(argv: list[str] | None = None) -> int:
     watch.add_argument("--results", required=True, metavar="DIR")
     watch.add_argument("--dry-run", action="store_true")
     watch.add_argument("--force", action="store_true")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "list-checks":
         policy = load_policy(Path(__file__).resolve().parents[1] / "policy.toml")
@@ -42,7 +47,11 @@ def main(argv: list[str] | None = None) -> int:
         from .watch import watch as run_watch
         return run_watch(args.harness, args.policy, args.results, dry_run=args.dry_run, force=args.force)
     from .suite import exit_code, run_suite
-    report = run_suite(load_policy(args.policy))
+    if args.harness == "claude":
+        from .claude import ClaudeRunner as runner_class
+    else:
+        from .codex import CodexRunner as runner_class
+    report = run_suite(load_policy(args.policy), runner_class)
     write_report(report, args.json, args.md)
     print(markdown(report))
     return exit_code(report)

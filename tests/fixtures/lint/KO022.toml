@@ -1,0 +1,10 @@
+# KO022: a write rule inside a deny re-opens that subtree (more specific wins, measured).
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"
+
+[permissions.p.filesystem]
+"{R}/prot" = "deny"
+"{R}/prot/inner" = "write"

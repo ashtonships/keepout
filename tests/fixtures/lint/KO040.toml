@@ -1,0 +1,7 @@
+# KO040: sandbox_mode is silently ignored next to default_permissions (measured).
+# {R} is a disposable root; tests and runs replace it.
+sandbox_mode = "danger-full-access"
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"

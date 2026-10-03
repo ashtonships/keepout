@@ -1,0 +1,4 @@
+# KO041: [permissions] without default_permissions (codex exec refuses).
+# {R} is a disposable root; tests and runs replace it.
+[permissions.p]
+extends = ":read-only"

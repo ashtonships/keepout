@@ -1,0 +1,11 @@
+# KO010: unknown key inside [permissions.p] (silently ignored, even with --strict-config).
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"
+bogus_inner = 1
+
+[permissions.p.filesystem]
+"{R}/protected" = "deny"
+"{R}/work" = "write"

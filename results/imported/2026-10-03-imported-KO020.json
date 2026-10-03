@@ -1,0 +1,162 @@
+{
+  "checks": [
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Run /bin/echo in workspace/",
+      "entry": "",
+      "expectation": "allow",
+      "id": "allowed:echo",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not run",
+      "description": ":root = deny",
+      "entry": ":root",
+      "expectation": "deny",
+      "id": "token::root",
+      "kind": "token",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "machine-wide token; Keepout never plants in real system paths",
+      "tested": false,
+      "untestable_reason": "machine-wide token; Keepout never plants in real system paths",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned 127.0.0.1 listener",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:tcp-loopback",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 71; stdout=''; stderr=\"sandbox-exec: execvp() of '/opt/homebrew/opt/python@3.14/bin/python3.14' failed: Operation not permitted\"",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned Unix socket",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:unix-socket",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 71; stdout=''; stderr=\"sandbox-exec: execvp() of '/opt/homebrew/opt/python@3.14/bin/python3.14' failed: Operation not permitted\"",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Read a Keepout canary in a fresh /private/tmp folder under :minimal",
+      "entry": ":minimal",
+      "expectation": "deny",
+      "id": "minimal-tmp-exposure:shell-read",
+      "kind": "minimal-tmp-exposure",
+      "known_outcome": "2026-10-03, codex-cli 0.156.1 macOS: with \":root\"=\"deny\" and \":minimal\"=\"read\", a canary under /private/tmp/koexp-*/protected was EXPOSED (also with -C in /private/var/folders and via /tmp/..); the same canary under /private/var/folders was BLOCKED; adding \"/private/tmp\"=\"deny\" made it BLOCKED. Binary string: 'macOS platform defaults included when a split filesystem policy requests `:minimal`'.",
+      "lint_id": "KO020",
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr='shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted\\njob-working-directory: error retrieving current directory: getcwd:'",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "FAIL"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Read a Keepout canary in a fresh /private/tmp folder under :minimal",
+      "entry": ":minimal",
+      "expectation": "deny",
+      "id": "minimal-tmp-exposure:python-read",
+      "kind": "minimal-tmp-exposure",
+      "lint_id": "KO020",
+      "note": "",
+      "sandbox_evidence": "exit 71; stdout=''; stderr=\"sandbox-exec: execvp() of '/opt/homebrew/opt/python@3.14/bin/python3.14' failed: Operation not permitted\"",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "UNMEASURED"
+    }
+  ],
+  "cli_version": "codex-cli 0.156.1",
+  "config": {
+    "file": "KO020.toml",
+    "fixture_placeholder": "/keepout-fixture-root",
+    "sha256": "1307ee6033c4711e62162a34d73905112014cff9b48af1fa197adc58c039edd2"
+  },
+  "counts": {
+    "FAIL": 1,
+    "INVALID": 0,
+    "PASS": 1,
+    "UNMEASURED": 4,
+    "tested": 5,
+    "untestable": 1
+  },
+  "date": "2026-10-03T17:31:30+00:00",
+  "dropped_top_level_keys": [],
+  "extends_chain": [
+    "p"
+  ],
+  "generated_config": "\"default_permissions\" = \"p\"\n[\"permissions\".\"p\".\"filesystem\"]\n\":root\" = \"deny\"\n\":minimal\" = \"read\"\n",
+  "harness": "codex sandbox imported permission profile",
+  "honesty": "Findings and results apply to codex-cli 0.156.1 on this macOS machine; none is a vendor vulnerability claim. `:minimal`'s /private/tmp read is documented-by-design platform defaults, reported because it defeats a common :root-deny intent.",
+  "lint": [
+    {
+      "evidence_fixture": "tests/fixtures/lint/KO020.toml",
+      "file": "KO020.toml",
+      "fix": "Add `\"/private/tmp\" = \"deny\"` (measured to close it) or keep secrets out of /tmp.",
+      "id": "KO020",
+      "line": 9,
+      "measured": "codex-cli 0.156.1 macOS 2026-10-03",
+      "message": "`:minimal` with no read base and no /private/tmp deny leaves /private/tmp readable",
+      "path": ":minimal",
+      "profile": "p",
+      "severity": "high",
+      "title": ":minimal exposes /private/tmp",
+      "why": "`:minimal` makes /private/tmp readable on macOS. A planted /private/tmp file was readable despite `:root`=deny (measured)."
+    }
+  ],
+  "log_denials": {
+    "evidence": "no measured denial to capture",
+    "verdict": "UNMEASURED"
+  },
+  "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "profile": "p",
+  "remap": [
+    {
+      "access": "deny",
+      "mapped": "not remapped (token)",
+      "original": ":root",
+      "profile": "p"
+    },
+    {
+      "access": "read",
+      "mapped": "not remapped (token)",
+      "original": ":minimal",
+      "profile": "p"
+    }
+  ],
+  "rule_omission": {
+    "evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+    "omitted_profile_override": "permissions.keepout={ extends = \":read-only\", network = { mode = \"limited\" }, filesystem = { \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
+    "probe_verdict_without_rule": "FAIL",
+    "rule": "home/.ssh",
+    "verdict": "PASS"
+  },
+  "status": "controls passed",
+  "verbatim_denies": []
+}

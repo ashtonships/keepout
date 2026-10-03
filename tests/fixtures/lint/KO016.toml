@@ -1,0 +1,9 @@
+# KO016: a relative path (Codex refuses it).
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"
+
+[permissions.p.filesystem]
+"secrets" = "deny"

@@ -1,0 +1,163 @@
+{
+  "checks": [
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Run /bin/echo in workspace/",
+      "entry": "",
+      "expectation": "allow",
+      "id": "allowed:echo",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Write a new file in /keepout-fixture-root/work",
+      "entry": "/keepout-fixture-root/work",
+      "expectation": "allow",
+      "id": "allowed:write:/keepout-fixture-root/work",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not run",
+      "description": ":home = deny",
+      "entry": ":home",
+      "expectation": "deny",
+      "id": "token::home",
+      "kind": "token",
+      "lint_id": "KO013",
+      "note": "",
+      "sandbox_evidence": "unknown token; Codex 0.156.1 ignores it (KO013)",
+      "tested": false,
+      "untestable_reason": "unknown token; Codex 0.156.1 ignores it (KO013)",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Read a canary in the fake HOME that :home = deny names",
+      "entry": ":home",
+      "expectation": "deny",
+      "id": "ignored-token::home:shell-read",
+      "kind": "ignored-token",
+      "known_outcome": "2026-10-03: \":home\"=\"deny\" left a canary under the fake HOME EXPOSED with empty stderr under `codex sandbox`; `codex exec` warned 'Configured filesystem path `:home` is not recognized'.",
+      "lint_id": "KO013",
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "FAIL"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned 127.0.0.1 listener",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:tcp-loopback",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned Unix socket",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:unix-socket",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    }
+  ],
+  "cli_version": "codex-cli 0.156.1",
+  "config": {
+    "file": "KO013.toml",
+    "fixture_placeholder": "/keepout-fixture-root",
+    "sha256": "776c7eab2133e35a652214273b235cc71070de7210e889ee7a0afd7b56ae6220"
+  },
+  "counts": {
+    "FAIL": 1,
+    "INVALID": 0,
+    "PASS": 4,
+    "UNMEASURED": 1,
+    "tested": 5,
+    "untestable": 1
+  },
+  "date": "2026-10-03T17:19:47+00:00",
+  "dropped_top_level_keys": [],
+  "extends_chain": [
+    "p",
+    ":read-only"
+  ],
+  "generated_config": "\"default_permissions\" = \"p\"\n[\"permissions\".\"p\"]\n\"extends\" = \":read-only\"\n\n[\"permissions\".\"p\".\"filesystem\"]\n\":home\" = \"deny\"\n\"<temp>/dir-shape/abs/keepout-fixture-root/work\" = \"write\"\n",
+  "harness": "codex sandbox imported permission profile",
+  "honesty": "Findings and results apply to codex-cli 0.156.1 on this macOS machine; none is a vendor vulnerability claim. `:minimal`'s /private/tmp read is documented-by-design platform defaults, reported because it defeats a common :root-deny intent.",
+  "lint": [
+    {
+      "evidence_fixture": "tests/fixtures/lint/KO013.toml",
+      "file": "KO013.toml",
+      "fix": "Use :root, :minimal, :workspace_roots, :tmpdir or :slash_tmp, or an absolute/~/ path.",
+      "id": "KO013",
+      "line": 9,
+      "measured": "codex-cli 0.156.1 macOS 2026-10-03",
+      "message": "token `:home` is not recognized and will be ignored",
+      "path": ":home",
+      "profile": "p",
+      "severity": "high",
+      "title": "Unknown special path token",
+      "why": "`codex sandbox` silently ignores it; exec warns 'not recognized ... will be ignored' (measured)."
+    }
+  ],
+  "log_denials": {
+    "evidence": "no measured denial to capture",
+    "verdict": "UNMEASURED"
+  },
+  "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "profile": "p",
+  "remap": [
+    {
+      "access": "deny",
+      "mapped": "not remapped (token)",
+      "original": ":home",
+      "profile": "p"
+    },
+    {
+      "access": "write",
+      "mapped": "<temp>/dir-shape/abs/keepout-fixture-root/work",
+      "original": "/keepout-fixture-root/work",
+      "profile": "p"
+    }
+  ],
+  "rule_omission": {
+    "evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+    "omitted_profile_override": "permissions.keepout={ extends = \":read-only\", network = { mode = \"limited\" }, filesystem = { \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
+    "probe_verdict_without_rule": "FAIL",
+    "rule": "home/.ssh",
+    "verdict": "PASS"
+  },
+  "status": "controls passed",
+  "verbatim_denies": []
+}

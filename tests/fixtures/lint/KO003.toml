@@ -1,0 +1,7 @@
+# KO003: an unrecognized top-level key.
+# {R} is a disposable root; tests and runs replace it.
+bogus_top_key = 1
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"

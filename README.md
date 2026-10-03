@@ -1,6 +1,6 @@
 # Keepout v0
 
-Keepout runs disposable commands against a generated Codex CLI permission profile and saves dated observations. **v0 tests a generated Codex permission profile derived from a Keepout test policy; importing and checking an existing Codex configuration is planned.** A result applies to the tested CLI version, policy, machine, and routes. It is not a security certification.
+Keepout runs disposable commands against a generated Codex CLI permission profile and saves dated observations. **v0 tests a generated Codex permission profile derived from a Keepout test policy. v0.2 adds a linter for an existing Codex `config.toml` and a runner that tests one of its permission profiles against remapped disposable canaries.** A result applies to the tested CLI version, policy, machine, and routes. It is not a security certification.
 
 ## Run
 
@@ -77,6 +77,73 @@ python3 -m keepout watch --harness codex --policy policy.toml --results results/
 `matrix` renders saved result files as one table: one column per harness, CLI version and OS (the newest run wins; older and superseded runs go to History). The HTML page is self-contained, with no scripts and no external files. Every check passes through the publication boundary again. **Held rule:** if a run has any held check (`pending_review` or `suspected_undocumented_bypass`, including a legacy FAIL with no classification), every denial cell in that run shows `held`, so the held check cannot be found from the cells. The row list still comes from public check ids, so when a held run is the only run with its policy, a missing denial row can hint at the held check; the per-run result files also list every other check by id. Review both before sharing a held run. **Leak guard:** if any value looks like an unredacted temporary path, home path or random canary, the command refuses to render and writes nothing (exit 2). It never redacts silently. Legacy runs without allowed-action and omitted-rule controls are labelled as such and are never shown as control-validated.
 
 `watch` reruns the suite only when no result exists for this CLI version, OS and policy. It reads the version through the Codex binary in a throwaway HOME and never runs `codex update` or a shell. If the version changes during a run, it writes no result. If the CLI is missing, it logs UNMEASURED. Each check appends one line to `results/watch-log.jsonl`. `--dry-run` writes nothing. No scheduler is installed.
+
+## Lint an existing config
+
+```sh
+python3 -m keepout lint CONFIG [--profile NAME] [--json FILE] [--codex-check]
+python3 -m keepout lint tests/fixtures/lint/KO020.toml --profile p
+```
+
+Keepout reads exactly the one file it is given, with `tomllib`. It refuses a file under the real `~/.codex`, `~/.claude`, `~/.ssh` or `~/.config` unless you pass `--i-own-this-file`, and even then it never reads that file's siblings. Each finding prints as `ID SEVERITY file:line message`, followed by `why:` and `fix:`. `--json` writes a list of `{id, severity, title, why, fix, line, profile, path, measured, evidence_fixture}`. The exit code is 2 for any `error` (Codex will refuse to start), 1 for any `high` (a rule silently does not protect), and 0 otherwise.
+
+`--codex-check` is the only lint mode that runs Codex. It writes a sanitized copy to a fake `CODEX_HOME` in a temporary folder. The copy holds only top-level scalars and arrays, `[permissions.*]` and `[sandbox_workspace_write]`; it never includes `mcp_servers`, hooks, `notify`, model providers, profiles or shell environment policy. Keepout then runs `codex exec --ephemeral` twice, once with `--strict-config` and once without, against a dead provider at `127.0.0.1:9`. This is only a session start: there is no auth and no model turn is possible. Measured on 0.156.1, a plain `codex exec` without that override contacts api.openai.com, so Keepout never runs it. Codex's own warnings are attached to the matching finding as `codex_said`. Fixtures write `{R}` for a disposable root, and Keepout reads `{R}` as `/keepout-fixture-root`.
+
+| ID | Severity | Rule | Evidence |
+| --- | --- | --- | --- |
+| KO001 | error | Config does not parse (incl. duplicate key) | measured |
+| KO002 | high | `sandbox_permissions` is ignored (silent under `codex sandbox`) | measured |
+| KO003 | info | Top-level key not in Keepout's 0.156.1 list | doc-only |
+| KO010 | high | Unknown key inside `[permissions.X]` (ignored even with `--strict-config`) | measured |
+| KO011 | high | `network.mode` is ignored; only `enabled` works | measured |
+| KO012 | high | Unknown network key | measured |
+| KO013 | high | Unknown `:token` (silently ignored by `codex sandbox`) | measured |
+| KO014 | error | Access value outside read/write/deny (case-sensitive) | measured |
+| KO015 | info | Undocumented value `none` (denies reads) | measured |
+| KO016 | error | Relative filesystem path | measured |
+| KO020 | high | `:minimal` without a read base leaves /private/tmp readable | measured |
+| KO021 | high | `:root` deny with no `:minimal`: commands exit 134 | measured |
+| KO022 | medium | Read/write rule inside a deny re-opens that subtree | measured |
+| KO023 | info | Same canonical path both denied and allowed (deny wins) | measured |
+| KO024 | high | Child profile replaces a parent deny with read/write | measured |
+| KO030 | info | Non-canonical path (alias, `//`, trailing `/`, `..`) | measured |
+| KO031 | info | `~/` path follows the Codex process's $HOME | measured |
+| KO040 | medium | `sandbox_mode`/`sandbox_workspace_write` next to `default_permissions` | measured |
+| KO041 | error | `[permissions]` without `default_permissions` (exec refuses) | measured |
+| KO042 | error | `default_permissions` or `--profile` names an undefined profile | measured |
+| KO043 | error | Unsupported built-in, undefined parent or cycle in `extends` | measured |
+| KO050 | info | Extends `:workspace` (also writes /tmp and $TMPDIR) | measured |
+| KO051 | info | Network enabled for a `*` or `**.` domain | doc-only |
+| KO090 | medium | A message Codex printed during `--codex-check` | measured per run |
+
+"Measured" means codex-cli 0.156.1 on macOS, 2026-10-03, with a fixture in `tests/fixtures/lint/<ID>.toml`.
+
+## Run an existing profile
+
+```sh
+python3 -m keepout run --harness codex --config CONFIG --profile NAME [--json F --md F]
+python3 -m keepout run --harness codex --config tests/fixtures/lint/KO020.toml --profile p \
+  --json results/imported/2026-10-03-imported-KO020.json --md results/imported/2026-10-03-imported-KO020.md
+KEEPOUT_LIVE=1 python3 -m unittest tests.test_imported -v
+```
+
+`--config` and `--policy` cannot be used together. Keepout creates a disposable root under the system temporary folder. It refuses to run if that root is under /private/tmp, because `:minimal` makes /private/tmp readable. Every configured path is remapped by string work alone, and Keepout never stats, reads or writes the real path: an absolute `P` becomes `<root>/abs/P`, `~/x` stays `~/x` under a fake HOME, `:tmpdir` maps to the fake TMPDIR, and `:workspace_roots` maps to the `-C` workspace. Paths containing `..` are refused. The generated `config.toml` carries only the profile's `[permissions.*]` extends chain, and the report lists every dropped top-level key. The one exception is a `"/private/tmp" = "deny"` entry, which is also kept unremapped. A deny only restricts, and keeping it shows whether it covers `:minimal`.
+
+Each deny entry is probed in two shapes, as a folder and as a file, each in its own fresh subroot. Each read entry must be readable, and writing to it must be blocked. Each write entry must accept a new file. Globs are probed with a synthesized matching path, both planted beforehand and created inside the sandbox. Loopback TCP and Unix sockets are expected to be allowed only when `network.enabled = true`. Machine-wide tokens (`:root`, `:minimal`, `:slash_tmp`), overridden parent entries, `domains` and `unix_sockets` are UNMEASURED, with the reason recorded. When a profile uses `:minimal`, Keepout plants a canary in a fresh folder it creates under /private/tmp and removes that folder afterwards.
+
+Controls work as in the policy runner. Every allowed action and `/bin/echo` must pass inside the sandbox. Every denial needs an exposed unsandboxed control. Each deny rule's first probe is rerun with that rule removed and recorded as `load_bearing`. The run-wide omitted-rule check on Keepout's bundled profile must pass. If any control fails, every denial is INVALID.
+
+A FAIL is `pending_review` and is withheld from JSON, Markdown and console output, unless its `(row kind, lint id)` is in `KNOWN_OUTCOMES` in `keepout/imported.py`. That table covers `minimal-tmp-exposure`/KO020, `carve-out`/KO022, `extends-relax`/KO024, `ignored-network-key`/KO011 and `ignored-token`/KO013, each with its 2026-10-03 measurement receipt. **A person must review any change to `KNOWN_OUTCOMES`**, because the table decides what is published. Public reports shorten original config paths to their last two components.
+
+Findings and results apply to codex-cli 0.156.1 on this macOS machine; none is a vendor vulnerability claim. `:minimal`'s /private/tmp read is documented-by-design platform defaults, reported because it defeats a common :root-deny intent.
+
+The [config result](results/imported/2026-10-03-macos-codex-0.156.1-config.md) runs `tests/fixtures/config/2026-09-26-failure-modes.toml`, a worker profile shaped like the Engine's 26 Sep 2026 worker-isolation starting point. With controls passing, it shows four configuration outcomes:
+- the child profile removes the parent's deny (KO024);
+- a write inside a deny re-opens it (KO022);
+- `:home` is ignored (KO013);
+- `network.mode = "full"` leaves loopback blocked (KO011).
+
+Per-rule receipts are in `results/imported/2026-10-03-imported-*.md`.
 
 ## Disclosure
 

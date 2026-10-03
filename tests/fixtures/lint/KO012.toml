@@ -1,0 +1,7 @@
+# KO012: an unknown network key.
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"
+network = { bogus = 1 }

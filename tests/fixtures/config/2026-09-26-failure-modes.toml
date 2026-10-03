@@ -1,0 +1,36 @@
+# A worker profile in the shape the Engine's 26 Sep 2026 worker-isolation spec started from, carrying every
+# silent failure mode measured on codex-cli 0.156.1 (2026-10-03). Paths are fixtures: `{R}` is a disposable root,
+# and Keepout remaps every path (including ~/) into a fresh temporary folder; no real path is read or touched.
+
+model = "example-model"
+sandbox_permissions = ["disk-full-read-access"]   # KO002: ignored (the spec's first candidate mechanism)
+sandbox_mode = "workspace-write"                  # KO040: silently ignored next to default_permissions
+default_permissions = "worker"
+
+[mcp_servers.example]                             # never carried into the generated config, never run
+command = "/usr/bin/true"
+
+[permissions.base]
+extends = ":read-only"
+network = { mode = "limited" }                    # KO011: `mode` is ignored (the Keepout v0 generator bug)
+
+[permissions.base.filesystem]
+"~/.ssh" = "deny"
+"~/.kaggle" = "deny"
+"~/.codex/auth.json" = "deny"
+"~/.config/opportunity-engine" = "deny"
+"{R}/engine/.auth" = "deny"
+"{R}/engine/work/projects" = "write"
+"{R}/engine/work/projects/demo/.git" = "read"      # a read-only carve-out inside a write area: holds
+
+[permissions.worker]
+extends = "base"
+network = { mode = "full" }                       # KO011: written intent "network on"; loopback stays blocked
+
+[permissions.worker.filesystem]
+"{R}/engine/.auth" = "read"                       # KO024: the child silently removes base's deny
+"{R}/engine/keys" = "deny"
+"{R}/engine/keys/cache" = "write"                 # KO022: a write inside a deny re-opens it
+":home" = "deny"                                  # KO013: unknown token, silently ignored
+"/tmp/engine-keys" = "deny"                       # KO030: alias path (canonicalized by 0.156.1)
+"{R}/engine/work/projects/**/*.env" = "deny"      # glob deny, including files created in the sandbox

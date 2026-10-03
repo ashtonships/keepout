@@ -1,0 +1,111 @@
+{
+  "checks": [
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Run /bin/echo in workspace/",
+      "entry": "",
+      "expectation": "allow",
+      "id": "allowed:echo",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Write a new file in /keepout-fixture-root/work",
+      "entry": "/keepout-fixture-root/work",
+      "expectation": "allow",
+      "id": "allowed:write:/keepout-fixture-root/work",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Connect to an owned 127.0.0.1 listener",
+      "entry": "",
+      "expectation": "allow",
+      "id": "network:tcp-loopback",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Connect to an owned Unix socket",
+      "entry": "",
+      "expectation": "allow",
+      "id": "network:unix-socket",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    }
+  ],
+  "cli_version": "codex-cli 0.156.1",
+  "config": {
+    "file": "KO011-control.toml",
+    "fixture_placeholder": "/keepout-fixture-root",
+    "sha256": "552a90982a01298948935b133495b5f5484c4ef9a3cec6d65a7c9cab5325e498"
+  },
+  "counts": {
+    "FAIL": 0,
+    "INVALID": 0,
+    "PASS": 4,
+    "UNMEASURED": 0,
+    "tested": 4,
+    "untestable": 0
+  },
+  "date": "2026-10-03T17:19:38+00:00",
+  "dropped_top_level_keys": [],
+  "extends_chain": [
+    "p",
+    ":read-only"
+  ],
+  "generated_config": "\"default_permissions\" = \"p\"\n[\"permissions\".\"p\"]\n\"extends\" = \":read-only\"\n\n[\"permissions\".\"p\".\"network\"]\n\"enabled\" = true\n\n[\"permissions\".\"p\".\"filesystem\"]\n\"<temp>/dir-shape/abs/keepout-fixture-root/work\" = \"write\"\n",
+  "harness": "codex sandbox imported permission profile",
+  "honesty": "Findings and results apply to codex-cli 0.156.1 on this macOS machine; none is a vendor vulnerability claim. `:minimal`'s /private/tmp read is documented-by-design platform defaults, reported because it defeats a common :root-deny intent.",
+  "lint": [],
+  "log_denials": {
+    "evidence": "no measured denial to capture",
+    "verdict": "UNMEASURED"
+  },
+  "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "profile": "p",
+  "remap": [
+    {
+      "access": "write",
+      "mapped": "<temp>/dir-shape/abs/keepout-fixture-root/work",
+      "original": "/keepout-fixture-root/work",
+      "profile": "p"
+    }
+  ],
+  "rule_omission": {
+    "evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+    "omitted_profile_override": "permissions.keepout={ extends = \":read-only\", network = { mode = \"limited\" }, filesystem = { \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
+    "probe_verdict_without_rule": "FAIL",
+    "rule": "home/.ssh",
+    "verdict": "PASS"
+  },
+  "status": "controls passed",
+  "verbatim_denies": []
+}

@@ -1,0 +1,11 @@
+# Clean: extends :read-only, one deny, one write, network off. Zero findings expected.
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"
+network = { enabled = false }
+
+[permissions.p.filesystem]
+"{R}/protected" = "deny"
+"{R}/work" = "write"

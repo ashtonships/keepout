@@ -1,0 +1,10 @@
+# control for KO011: network.enabled = true opens loopback (measured). Zero findings expected.
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"
+network = { enabled = true }
+
+[permissions.p.filesystem]
+"{R}/work" = "write"

@@ -1,0 +1,10 @@
+# KO013: an unknown :token (codex sandbox ignores it silently, exec warns).
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"
+
+[permissions.p.filesystem]
+":home" = "deny"
+"{R}/work" = "write"

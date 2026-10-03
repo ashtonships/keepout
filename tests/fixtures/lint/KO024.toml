@@ -1,0 +1,16 @@
+# KO024: child profile c relaxes parent p's deny (the parent deny is removed, measured).
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "c"
+
+[permissions.p]
+extends = ":read-only"
+
+[permissions.p.filesystem]
+"{R}/protected" = "deny"
+"{R}/work" = "write"
+
+[permissions.c]
+extends = "p"
+
+[permissions.c.filesystem]
+"{R}/protected" = "read"

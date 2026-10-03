@@ -1,0 +1,248 @@
+{
+  "checks": [
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Run /bin/echo in workspace/",
+      "entry": "",
+      "expectation": "allow",
+      "id": "allowed:echo",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not run",
+      "description": ":root = deny",
+      "entry": ":root",
+      "expectation": "deny",
+      "id": "token::root",
+      "kind": "token",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "machine-wide token; Keepout never plants in real system paths",
+      "tested": false,
+      "untestable_reason": "machine-wide token; Keepout never plants in real system paths",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "shell-read of a canary folder under denied /private/tmp",
+      "entry": "/private/tmp",
+      "expectation": "deny",
+      "id": "deny:/private/tmp[dir]:shell-read",
+      "kind": "deny",
+      "lint_id": null,
+      "load_bearing": false,
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage; also blocked without this rule (covered by base/broader deny)",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted\\njob-working-directory: error retrieving current directory: getcwd:'",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "python-read of a canary folder under denied /private/tmp",
+      "entry": "/private/tmp",
+      "expectation": "deny",
+      "id": "deny:/private/tmp[dir]:python-read",
+      "kind": "deny",
+      "lint_id": null,
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 71; stdout=''; stderr=\"sandbox-exec: execvp() of '/opt/homebrew/opt/python@3.14/bin/python3.14' failed: Operation not permitted\"",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "write-new of a canary folder under denied /private/tmp",
+      "entry": "/private/tmp",
+      "expectation": "deny",
+      "id": "deny:/private/tmp[dir]:write-new",
+      "kind": "deny",
+      "lint_id": null,
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 71; stdout=''; stderr=\"sandbox-exec: execvp() of '/opt/homebrew/opt/python@3.14/bin/python3.14' failed: Operation not permitted\"",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "shell-read of /private/tmp as a file",
+      "entry": "/private/tmp",
+      "expectation": "deny",
+      "id": "deny:/private/tmp[file]:shell-read",
+      "kind": "deny",
+      "lint_id": null,
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted\\njob-working-directory: error retrieving current directory: getcwd:'",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "python-read of /private/tmp as a file",
+      "entry": "/private/tmp",
+      "expectation": "deny",
+      "id": "deny:/private/tmp[file]:python-read",
+      "kind": "deny",
+      "lint_id": null,
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 71; stdout=''; stderr=\"sandbox-exec: execvp() of '/opt/homebrew/opt/python@3.14/bin/python3.14' failed: Operation not permitted\"",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "overwrite of /private/tmp as a file",
+      "entry": "/private/tmp",
+      "expectation": "deny",
+      "id": "deny:/private/tmp[file]:overwrite",
+      "kind": "deny",
+      "lint_id": null,
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 71; stdout=''; stderr=\"sandbox-exec: execvp() of '/opt/homebrew/opt/python@3.14/bin/python3.14' failed: Operation not permitted\"",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned 127.0.0.1 listener",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:tcp-loopback",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 71; stdout=''; stderr=\"sandbox-exec: execvp() of '/opt/homebrew/opt/python@3.14/bin/python3.14' failed: Operation not permitted\"",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned Unix socket",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:unix-socket",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 71; stdout=''; stderr=\"sandbox-exec: execvp() of '/opt/homebrew/opt/python@3.14/bin/python3.14' failed: Operation not permitted\"",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Read a Keepout canary in a fresh /private/tmp folder under :minimal",
+      "entry": ":minimal",
+      "expectation": "deny",
+      "id": "minimal-tmp-exposure:shell-read",
+      "kind": "minimal-tmp-exposure",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted\\njob-working-directory: error retrieving current directory: getcwd:'",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Read a Keepout canary in a fresh /private/tmp folder under :minimal",
+      "entry": ":minimal",
+      "expectation": "deny",
+      "id": "minimal-tmp-exposure:python-read",
+      "kind": "minimal-tmp-exposure",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 71; stdout=''; stderr=\"sandbox-exec: execvp() of '/opt/homebrew/opt/python@3.14/bin/python3.14' failed: Operation not permitted\"",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "UNMEASURED"
+    }
+  ],
+  "cli_version": "codex-cli 0.156.1",
+  "config": {
+    "file": "KO020-fix.toml",
+    "fixture_placeholder": "/keepout-fixture-root",
+    "sha256": "82b3d0c71d48d6aa5e3d82286f2ae164ef659773813b11674908cd55fc1f7e51"
+  },
+  "counts": {
+    "FAIL": 0,
+    "INVALID": 0,
+    "PASS": 4,
+    "UNMEASURED": 8,
+    "tested": 11,
+    "untestable": 1
+  },
+  "date": "2026-10-03T17:31:37+00:00",
+  "dropped_top_level_keys": [],
+  "extends_chain": [
+    "p"
+  ],
+  "generated_config": "\"default_permissions\" = \"p\"\n[\"permissions\".\"p\".\"filesystem\"]\n\":root\" = \"deny\"\n\":minimal\" = \"read\"\n\"<temp>/dir-shape/abs/private/tmp\" = \"deny\"\n\"/private/tmp\" = \"deny\"\n",
+  "harness": "codex sandbox imported permission profile",
+  "honesty": "Findings and results apply to codex-cli 0.156.1 on this macOS machine; none is a vendor vulnerability claim. `:minimal`'s /private/tmp read is documented-by-design platform defaults, reported because it defeats a common :root-deny intent.",
+  "lint": [],
+  "log_denials": {
+    "attempts": 1,
+    "evidence": "(bash) file-read-data <temp>/dir-shape/workspace\n(bash) file-read-data <temp>/dir-shape\n(cat) file-read-data <temp>/dir-shape/abs/private/tmp/keepout-canary",
+    "other_denial_lines": 18,
+    "row": "deny:/private/tmp[dir]:shell-read",
+    "verdict": "CAPTURED"
+  },
+  "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "profile": "p",
+  "remap": [
+    {
+      "access": "deny",
+      "mapped": "not remapped (token)",
+      "original": ":root",
+      "profile": "p"
+    },
+    {
+      "access": "read",
+      "mapped": "not remapped (token)",
+      "original": ":minimal",
+      "profile": "p"
+    },
+    {
+      "access": "deny",
+      "mapped": "<temp>/dir-shape/abs/private/tmp",
+      "original": "/private/tmp",
+      "profile": "p"
+    }
+  ],
+  "rule_omission": {
+    "evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+    "omitted_profile_override": "permissions.keepout={ extends = \":read-only\", network = { mode = \"limited\" }, filesystem = { \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
+    "probe_verdict_without_rule": "FAIL",
+    "rule": "home/.ssh",
+    "verdict": "PASS"
+  },
+  "status": "controls passed",
+  "verbatim_denies": [
+    "/private/tmp"
+  ]
+}

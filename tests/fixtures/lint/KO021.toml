@@ -1,0 +1,8 @@
+# KO021: :root deny with no :minimal: commands exit 134 before running (measured).
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+
+[permissions.p.filesystem]
+":root" = "deny"

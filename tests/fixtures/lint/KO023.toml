@@ -1,0 +1,10 @@
+# KO023: the same canonical path is denied and writable; deny wins, the write is dead. (The trailing slash also raises KO030.)
+# {R} is a disposable root; tests and runs replace it.
+default_permissions = "p"
+
+[permissions.p]
+extends = ":read-only"
+
+[permissions.p.filesystem]
+"{R}/same" = "write"
+"{R}/same/" = "deny"

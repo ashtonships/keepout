@@ -1,0 +1,226 @@
+{
+  "checks": [
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Run /bin/echo in workspace/",
+      "entry": "",
+      "expectation": "allow",
+      "id": "allowed:echo",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Write a new file in /keepout-fixture-root/work",
+      "entry": "/keepout-fixture-root/work",
+      "expectation": "allow",
+      "id": "allowed:write:/keepout-fixture-root/work",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "shell-read of a canary folder under denied /.../x/protected",
+      "entry": "/.../x/protected",
+      "expectation": "deny",
+      "id": "deny:/.../x/protected[dir]:shell-read",
+      "kind": "deny",
+      "lint_id": "KO030",
+      "load_bearing": true,
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/dir-shape/abs/private/.../x/protected/keepout-canary: Operation not permitted'",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "python-read of a canary folder under denied /.../x/protected",
+      "entry": "/.../x/protected",
+      "expectation": "deny",
+      "id": "deny:/.../x/protected[dir]:python-read",
+      "kind": "deny",
+      "lint_id": "KO030",
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "write-new of a canary folder under denied /.../x/protected",
+      "entry": "/.../x/protected",
+      "expectation": "deny",
+      "id": "deny:/.../x/protected[dir]:write-new",
+      "kind": "deny",
+      "lint_id": "KO030",
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "shell-read of /.../x/protected as a file",
+      "entry": "/.../x/protected",
+      "expectation": "deny",
+      "id": "deny:/.../x/protected[file]:shell-read",
+      "kind": "deny",
+      "lint_id": "KO030",
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/file-shape/abs/private/.../x/protected: Operation not permitted'",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "python-read of /.../x/protected as a file",
+      "entry": "/.../x/protected",
+      "expectation": "deny",
+      "id": "deny:/.../x/protected[file]:python-read",
+      "kind": "deny",
+      "lint_id": "KO030",
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "overwrite of /.../x/protected as a file",
+      "entry": "/.../x/protected",
+      "expectation": "deny",
+      "id": "deny:/.../x/protected[file]:overwrite",
+      "kind": "deny",
+      "lint_id": "KO030",
+      "note": "real path is under /private/tmp; remapped result does not reflect :minimal coverage",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned 127.0.0.1 listener",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:tcp-loopback",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned Unix socket",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:unix-socket",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    }
+  ],
+  "cli_version": "codex-cli 0.156.1",
+  "config": {
+    "file": "KO030.toml",
+    "fixture_placeholder": "/keepout-fixture-root",
+    "sha256": "402b4a7efa6ff86421bf2485eae6777649f43545d5cd5c7033c90d338e53fa0f"
+  },
+  "counts": {
+    "FAIL": 0,
+    "INVALID": 0,
+    "PASS": 10,
+    "UNMEASURED": 0,
+    "tested": 10,
+    "untestable": 0
+  },
+  "date": "2026-10-03T17:20:30+00:00",
+  "dropped_top_level_keys": [],
+  "extends_chain": [
+    "p",
+    ":read-only"
+  ],
+  "generated_config": "\"default_permissions\" = \"p\"\n[\"permissions\".\"p\"]\n\"extends\" = \":read-only\"\n\n[\"permissions\".\"p\".\"filesystem\"]\n\"<temp>/dir-shape/abs/private/.../x/protected\" = \"deny\"\n\"<temp>/dir-shape/abs/keepout-fixture-root/work\" = \"write\"\n",
+  "harness": "codex sandbox imported permission profile",
+  "honesty": "Findings and results apply to codex-cli 0.156.1 on this macOS machine; none is a vendor vulnerability claim. `:minimal`'s /private/tmp read is documented-by-design platform defaults, reported because it defeats a common :root-deny intent.",
+  "lint": [
+    {
+      "evidence_fixture": "tests/fixtures/lint/KO030.toml",
+      "file": "KO030.toml",
+      "fix": "Write the canonical path.",
+      "id": "KO030",
+      "line": 9,
+      "measured": "codex-cli 0.156.1 macOS 2026-10-03",
+      "message": "`/.../x/protected` is canonically `/private/.../x/protected`",
+      "path": "/.../x/protected",
+      "profile": "p",
+      "severity": "info",
+      "title": "Non-canonical path",
+      "why": "canonicalized by 0.156.1, for both existing and not-yet-created paths (measured); write it canonically so older or newer versions and reviewers agree."
+    }
+  ],
+  "log_denials": {
+    "attempts": 1,
+    "evidence": "(cat) file-read-data <temp>/dir-shape/abs/private/tmp/x/protected/keepout-canary",
+    "other_denial_lines": 15,
+    "row": "deny:/tmp/x/protected[dir]:shell-read",
+    "verdict": "CAPTURED"
+  },
+  "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "profile": "p",
+  "remap": [
+    {
+      "access": "deny",
+      "mapped": "<temp>/dir-shape/abs/private/.../x/protected",
+      "original": "/.../x/protected",
+      "profile": "p"
+    },
+    {
+      "access": "write",
+      "mapped": "<temp>/dir-shape/abs/keepout-fixture-root/work",
+      "original": "/keepout-fixture-root/work",
+      "profile": "p"
+    }
+  ],
+  "rule_omission": {
+    "evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+    "omitted_profile_override": "permissions.keepout={ extends = \":read-only\", network = { mode = \"limited\" }, filesystem = { \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
+    "probe_verdict_without_rule": "FAIL",
+    "rule": "home/.ssh",
+    "verdict": "PASS"
+  },
+  "status": "controls passed",
+  "verbatim_denies": []
+}

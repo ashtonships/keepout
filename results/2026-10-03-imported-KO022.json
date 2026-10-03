@@ -1,0 +1,242 @@
+{
+  "checks": [
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Run /bin/echo in workspace/",
+      "entry": "",
+      "expectation": "allow",
+      "id": "allowed:echo",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Write a new file in /.../prot/inner",
+      "entry": "/.../prot/inner",
+      "expectation": "allow",
+      "id": "allowed:write:/.../prot/inner",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "shell-read of a canary folder under denied /keepout-fixture-root/prot",
+      "entry": "/keepout-fixture-root/prot",
+      "expectation": "deny",
+      "id": "deny:/keepout-fixture-root/prot[dir]:shell-read",
+      "kind": "deny",
+      "lint_id": null,
+      "load_bearing": true,
+      "note": "",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/dir-shape/abs/keepout-fixture-root/prot/keepout-canary: Operation not permitted'",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "python-read of a canary folder under denied /keepout-fixture-root/prot",
+      "entry": "/keepout-fixture-root/prot",
+      "expectation": "deny",
+      "id": "deny:/keepout-fixture-root/prot[dir]:python-read",
+      "kind": "deny",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "write-new of a canary folder under denied /keepout-fixture-root/prot",
+      "entry": "/keepout-fixture-root/prot",
+      "expectation": "deny",
+      "id": "deny:/keepout-fixture-root/prot[dir]:write-new",
+      "kind": "deny",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not run",
+      "description": "shell-read of /keepout-fixture-root/prot as a file",
+      "entry": "/keepout-fixture-root/prot",
+      "expectation": "deny",
+      "id": "deny:/keepout-fixture-root/prot[file]:shell-read",
+      "kind": "deny",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "other entries sit inside this path; it cannot be a file",
+      "tested": false,
+      "untestable_reason": "other entries sit inside this path; it cannot be a file",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not run",
+      "description": "python-read of /keepout-fixture-root/prot as a file",
+      "entry": "/keepout-fixture-root/prot",
+      "expectation": "deny",
+      "id": "deny:/keepout-fixture-root/prot[file]:python-read",
+      "kind": "deny",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "other entries sit inside this path; it cannot be a file",
+      "tested": false,
+      "untestable_reason": "other entries sit inside this path; it cannot be a file",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not run",
+      "description": "overwrite of /keepout-fixture-root/prot as a file",
+      "entry": "/keepout-fixture-root/prot",
+      "expectation": "deny",
+      "id": "deny:/keepout-fixture-root/prot[file]:overwrite",
+      "kind": "deny",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "other entries sit inside this path; it cannot be a file",
+      "tested": false,
+      "untestable_reason": "other entries sit inside this path; it cannot be a file",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "write-new in /.../prot/inner (write) inside denied /keepout-fixture-root/prot",
+      "entry": "/.../prot/inner",
+      "expectation": "deny",
+      "id": "carve-out:/.../prot/inner:write-new",
+      "kind": "carve-out",
+      "known_outcome": "2026-10-03 O2: deny {R}/prot plus write {R}/prot/inner: inner read and write both succeeded while the parent file stayed BLOCKED (more specific rule wins).",
+      "lint_id": "KO022",
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "FAIL"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned 127.0.0.1 listener",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:tcp-loopback",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned Unix socket",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:unix-socket",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    }
+  ],
+  "cli_version": "codex-cli 0.156.1",
+  "config": {
+    "file": "KO022.toml",
+    "fixture_placeholder": "/keepout-fixture-root",
+    "sha256": "c971369c33610fd6c52ce02980ef02701c29f0f1d18bac8c0dd3f581d4974094"
+  },
+  "counts": {
+    "FAIL": 1,
+    "INVALID": 0,
+    "PASS": 7,
+    "UNMEASURED": 3,
+    "tested": 8,
+    "untestable": 3
+  },
+  "date": "2026-10-03T17:20:15+00:00",
+  "dropped_top_level_keys": [],
+  "extends_chain": [
+    "p",
+    ":read-only"
+  ],
+  "generated_config": "\"default_permissions\" = \"p\"\n[\"permissions\".\"p\"]\n\"extends\" = \":read-only\"\n\n[\"permissions\".\"p\".\"filesystem\"]\n\"<temp>/dir-shape/abs/keepout-fixture-root/prot\" = \"deny\"\n\"<temp>/dir-shape/abs/.../prot/inner\" = \"write\"\n",
+  "harness": "codex sandbox imported permission profile",
+  "honesty": "Findings and results apply to codex-cli 0.156.1 on this macOS machine; none is a vendor vulnerability claim. `:minimal`'s /private/tmp read is documented-by-design platform defaults, reported because it defeats a common :root-deny intent.",
+  "lint": [
+    {
+      "evidence_fixture": "tests/fixtures/lint/KO022.toml",
+      "file": "KO022.toml",
+      "fix": "Move the allowed folder outside the denied one, or drop the inner rule.",
+      "id": "KO022",
+      "line": 10,
+      "measured": "codex-cli 0.156.1 macOS 2026-10-03",
+      "message": "`{R}/prot/inner` (write) is inside denied `{R}/prot`; that subtree is open again",
+      "path": "/.../prot/inner",
+      "profile": "p",
+      "severity": "medium",
+      "title": "Allow rule inside a deny",
+      "why": "more specific wins; the subtree is readable and writable again (measured)."
+    }
+  ],
+  "log_denials": {
+    "attempts": 1,
+    "evidence": "(cat) file-read-data <temp>/dir-shape/abs/keepout-fixture-root/prot/keepout-canary",
+    "other_denial_lines": 15,
+    "row": "deny:/keepout-fixture-root/prot[dir]:shell-read",
+    "verdict": "CAPTURED"
+  },
+  "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "profile": "p",
+  "remap": [
+    {
+      "access": "deny",
+      "mapped": "<temp>/dir-shape/abs/keepout-fixture-root/prot",
+      "original": "/keepout-fixture-root/prot",
+      "profile": "p"
+    },
+    {
+      "access": "write",
+      "mapped": "<temp>/dir-shape/abs/.../prot/inner",
+      "original": "/.../prot/inner",
+      "profile": "p"
+    }
+  ],
+  "rule_omission": {
+    "evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+    "omitted_profile_override": "permissions.keepout={ extends = \":read-only\", network = { mode = \"limited\" }, filesystem = { \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
+    "probe_verdict_without_rule": "FAIL",
+    "rule": "home/.ssh",
+    "verdict": "PASS"
+  },
+  "status": "controls passed",
+  "verbatim_denies": []
+}

@@ -1,0 +1,125 @@
+{
+  "checks": [
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Run /bin/echo in workspace/",
+      "entry": "",
+      "expectation": "allow",
+      "id": "allowed:echo",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 134; stdout=''; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "INVALID"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not run",
+      "description": ":root = deny",
+      "entry": ":root",
+      "expectation": "deny",
+      "id": "token::root",
+      "kind": "token",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "machine-wide token; Keepout never plants in real system paths",
+      "tested": false,
+      "untestable_reason": "machine-wide token; Keepout never plants in real system paths",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned 127.0.0.1 listener",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:tcp-loopback",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "sandbox blocked allowed actions; denials prove nothing (allowed:echo); /bin/echo itself failed, see KO021",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "INVALID"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned Unix socket",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:unix-socket",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "sandbox blocked allowed actions; denials prove nothing (allowed:echo); /bin/echo itself failed, see KO021",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "INVALID"
+    }
+  ],
+  "cli_version": "codex-cli 0.156.1",
+  "config": {
+    "file": "KO021.toml",
+    "fixture_placeholder": "/keepout-fixture-root",
+    "sha256": "a07e85980b1233ac9c24a6e3e545a70a5558d559d31107ad2ca1e025863a5502"
+  },
+  "counts": {
+    "FAIL": 0,
+    "INVALID": 3,
+    "PASS": 0,
+    "UNMEASURED": 1,
+    "tested": 3,
+    "untestable": 1
+  },
+  "date": "2026-10-03T17:20:05+00:00",
+  "dropped_top_level_keys": [],
+  "extends_chain": [
+    "p"
+  ],
+  "generated_config": "\"default_permissions\" = \"p\"\n[\"permissions\".\"p\".\"filesystem\"]\n\":root\" = \"deny\"\n",
+  "harness": "codex sandbox imported permission profile",
+  "honesty": "Findings and results apply to codex-cli 0.156.1 on this macOS machine; none is a vendor vulnerability claim. `:minimal`'s /private/tmp read is documented-by-design platform defaults, reported because it defeats a common :root-deny intent.",
+  "lint": [
+    {
+      "evidence_fixture": "tests/fixtures/lint/KO021.toml",
+      "file": "KO021.toml",
+      "fix": "Add `\":minimal\" = \"read\"` (and see KO020) or extend :read-only.",
+      "id": "KO021",
+      "line": 8,
+      "measured": "codex-cli 0.156.1 macOS 2026-10-03",
+      "message": "`:root` = deny with no `:minimal`: commands cannot start",
+      "path": ":root",
+      "profile": "p",
+      "severity": "high",
+      "title": ":root denied with no :minimal",
+      "why": "commands exit 134 before running (measured); the profile is unusable, not protective."
+    }
+  ],
+  "log_denials": {
+    "evidence": "no measured denial to capture",
+    "verdict": "UNMEASURED"
+  },
+  "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "profile": "p",
+  "remap": [
+    {
+      "access": "deny",
+      "mapped": "not remapped (token)",
+      "original": ":root",
+      "profile": "p"
+    }
+  ],
+  "rule_omission": {
+    "evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+    "omitted_profile_override": "permissions.keepout={ extends = \":read-only\", network = { mode = \"limited\" }, filesystem = { \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
+    "probe_verdict_without_rule": "FAIL",
+    "rule": "home/.ssh",
+    "verdict": "PASS"
+  },
+  "status": "INVALID: sandbox blocked allowed actions; denials prove nothing (allowed:echo); /bin/echo itself failed, see KO021",
+  "verbatim_denies": []
+}

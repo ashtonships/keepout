@@ -270,7 +270,7 @@ class LiveImportedTests(unittest.TestCase):
         self.assertIn("exit 134", rows["allowed:echo"]["sandbox_evidence"])
 
     def test_ko022_inner_write_succeeds_inside_a_deny(self):
-        row = self.run_fixture("KO022")["carve-out:/keepout-fixture-root/prot/inner:write-new"]
+        row = self.run_fixture("KO022")["carve-out:/.../prot/inner:write-new"]  # public ids keep 2 components
         self.assertEqual((row["verdict"], row["classification"]), ("FAIL", "configuration_outcome"))
 
     def test_ko024_child_relax_exposes_the_parent_deny(self):
@@ -280,7 +280,7 @@ class LiveImportedTests(unittest.TestCase):
 
     def test_ko030_alias_deny_holds(self):
         rows = self.run_fixture("KO030")
-        self.assertEqual(rows["deny:/tmp/x/protected[dir]:shell-read"]["verdict"], "PASS")
+        self.assertEqual(rows["deny:/.../x/protected[dir]:shell-read"]["verdict"], "PASS")
 
     def test_ko002_codex_sandbox_is_silent_about_sandbox_permissions(self):
         from keepout.codex import find_codex

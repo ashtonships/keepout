@@ -584,12 +584,18 @@ class ImportedRunner:
         layout = self.layouts[row.probe.layout]
         command = [self.cli, "sandbox", "-C", str(layout.workspace), "-P", self.profile, "--log-denials", "--",
                    *self._argv(row.probe, True)]
-        try:
-            result = subprocess.run(command, cwd=layout.workspace, env=self.env(layout), capture_output=True,
-                                    text=True, timeout=20)
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            return {"verdict": "UNMEASURED", "evidence": f"--log-denials could not complete: {type(exc).__name__}"}
-        return parse_denials(row.id, self.clean((result.stdout + "\n" + result.stderr).strip()))
+        parsed: dict = {}
+        for attempt in range(1, 4):  # `log stream` can attach late and miss a short command; retry the same probe
+            try:
+                result = subprocess.run(command, cwd=layout.workspace, env=self.env(layout), capture_output=True,
+                                        text=True, timeout=20)
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                return {"verdict": "UNMEASURED", "evidence": f"--log-denials could not complete: {type(exc).__name__}"}
+            parsed = parse_denials(row.id, self.clean((result.stdout + "\n" + result.stderr).strip()))
+            parsed["attempts"] = attempt
+            if parsed["verdict"] == "CAPTURED":
+                break
+        return parsed
 
     def apply_controls(self, results: list[dict], omission: dict) -> str:
         allowed = [item for item in results if item["kind"] == "allowed"]
@@ -760,6 +766,7 @@ def public_report(report: dict) -> dict:
         checks.append(safe)
     out["checks"] = checks
     for item in out.get("lint", []):
+        item["file"] = Path(str(item.get("file") or "")).name  # never the local folder layout
         for key in ("message", "path"):
             if isinstance(item.get(key), str):
                 item[key] = shrink(item[key])
@@ -783,7 +790,9 @@ def markdown(report: dict) -> str:
         f"- Summary: {report['status']}; tested {counts['tested']}, untestable {counts['untestable']}; "
         f"PASS {counts['PASS']}, FAIL {counts['FAIL']}, INVALID {counts['INVALID']}, UNMEASURED {counts['UNMEASURED']}",
         f"- Run-wide omitted-rule control: {report['rule_omission'].get('verdict')}",
-        f"- Seatbelt denial log (first denial probe): {report.get('log_denials', {}).get('verdict', 'UNMEASURED')}",
+        f"- Seatbelt denial log (`--log-denials`, first denial probe): "
+        f"{report.get('log_denials', {}).get('verdict', 'UNMEASURED')}: "
+        f"`{report.get('log_denials', {}).get('evidence', '').replace(chr(10), '; ').replace('`', '')}`",
         f"- Dropped top-level keys (not carried into the generated config): "
         f"{', '.join('`' + key + '`' for key in report['dropped_top_level_keys']) or 'none'}",
         "",

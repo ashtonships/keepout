@@ -1,0 +1,194 @@
+{
+  "checks": [
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Run /bin/echo in workspace/",
+      "entry": "",
+      "expectation": "allow",
+      "id": "allowed:echo",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Read a canary in /keepout-fixture-root/protected",
+      "entry": "/keepout-fixture-root/protected",
+      "expectation": "allow",
+      "id": "allowed:read:/keepout-fixture-root/protected",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Write a new file in read-only /keepout-fixture-root/protected",
+      "entry": "/keepout-fixture-root/protected",
+      "expectation": "deny",
+      "id": "read-only:/keepout-fixture-root/protected:write-new",
+      "kind": "read-only",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Write a new file in /keepout-fixture-root/work",
+      "entry": "/keepout-fixture-root/work",
+      "expectation": "allow",
+      "id": "allowed:write:/keepout-fixture-root/work",
+      "kind": "allowed",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not run",
+      "description": "p's /keepout-fixture-root/protected = deny",
+      "entry": "/keepout-fixture-root/protected",
+      "expectation": "deny",
+      "id": "overridden:p:/keepout-fixture-root/protected",
+      "kind": "overridden",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "replaced by child profile entry, see KO024",
+      "tested": false,
+      "untestable_reason": "replaced by child profile entry, see KO024",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Read a canary under /keepout-fixture-root/protected, denied by parent p and set to read by child c",
+      "entry": "/keepout-fixture-root/protected",
+      "expectation": "deny",
+      "id": "extends-relax:/keepout-fixture-root/protected:shell-read",
+      "kind": "extends-relax",
+      "known_outcome": "2026-10-03 C7: [permissions.p] denies {R}/protected; [permissions.c] extends p and sets it to read; `-P c` gave EXPOSED. C6 (no override) gave BLOCKED.",
+      "lint_id": "KO024",
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "FAIL"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned 127.0.0.1 listener",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:tcp-loopback",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to an owned Unix socket",
+      "entry": "",
+      "expectation": "deny",
+      "id": "network:unix-socket",
+      "kind": "network",
+      "lint_id": null,
+      "note": "",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "tested": true,
+      "untestable_reason": "",
+      "verdict": "PASS"
+    }
+  ],
+  "cli_version": "codex-cli 0.156.1",
+  "config": {
+    "file": "KO024.toml",
+    "fixture_placeholder": "/keepout-fixture-root",
+    "sha256": "8f768c47775d93a09e5d739698694a50b91c87a61e3c136c0d06a3b245264b9f"
+  },
+  "counts": {
+    "FAIL": 1,
+    "INVALID": 0,
+    "PASS": 6,
+    "UNMEASURED": 1,
+    "tested": 7,
+    "untestable": 1
+  },
+  "date": "2026-10-03T17:20:22+00:00",
+  "dropped_top_level_keys": [],
+  "extends_chain": [
+    "c",
+    "p",
+    ":read-only"
+  ],
+  "generated_config": "\"default_permissions\" = \"c\"\n[\"permissions\".\"c\"]\n\"extends\" = \"p\"\n\n[\"permissions\".\"c\".\"filesystem\"]\n\"<temp>/dir-shape/abs/keepout-fixture-root/protected\" = \"read\"\n\n[\"permissions\".\"p\"]\n\"extends\" = \":read-only\"\n\n[\"permissions\".\"p\".\"filesystem\"]\n\"<temp>/dir-shape/abs/keepout-fixture-root/protected\" = \"deny\"\n\"<temp>/dir-shape/abs/keepout-fixture-root/work\" = \"write\"\n",
+  "harness": "codex sandbox imported permission profile",
+  "honesty": "Findings and results apply to codex-cli 0.156.1 on this macOS machine; none is a vendor vulnerability claim. `:minimal`'s /private/tmp read is documented-by-design platform defaults, reported because it defeats a common :root-deny intent.",
+  "lint": [
+    {
+      "evidence_fixture": "tests/fixtures/lint/KO024.toml",
+      "file": "KO024.toml",
+      "fix": "Keep the deny in the child, or use a different (deeper) path for the child's allowance.",
+      "id": "KO024",
+      "line": 16,
+      "measured": "codex-cli 0.156.1 macOS 2026-10-03",
+      "message": "profile `c` sets `{R}/protected` = read, removing `p`'s deny",
+      "path": "/keepout-fixture-root/protected",
+      "profile": "c",
+      "severity": "high",
+      "title": "Child profile relaxes a parent deny",
+      "why": "a child entry with the same path replaces the parent's; the parent deny is removed (measured)."
+    }
+  ],
+  "log_denials": {
+    "evidence": "no measured denial to capture",
+    "verdict": "UNMEASURED"
+  },
+  "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "profile": "c",
+  "remap": [
+    {
+      "access": "read",
+      "mapped": "<temp>/dir-shape/abs/keepout-fixture-root/protected",
+      "original": "/keepout-fixture-root/protected",
+      "profile": "c"
+    },
+    {
+      "access": "write",
+      "mapped": "<temp>/dir-shape/abs/keepout-fixture-root/work",
+      "original": "/keepout-fixture-root/work",
+      "profile": "p"
+    }
+  ],
+  "rule_omission": {
+    "evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+    "omitted_profile_override": "permissions.keepout={ extends = \":read-only\", network = { mode = \"limited\" }, filesystem = { \"<temp>/home/.config/codex\" = \"deny\", \"<temp>/home/.config/secrets\" = \"deny\", \"<temp>/protected\" = \"deny\", \"<temp>/work\" = \"write\" } }",
+    "probe_verdict_without_rule": "FAIL",
+    "rule": "home/.ssh",
+    "verdict": "PASS"
+  },
+  "status": "controls passed",
+  "verbatim_denies": []
+}

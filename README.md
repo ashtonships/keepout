@@ -39,6 +39,17 @@ The [September 27 round 2 macOS result](results/2026-09-27b-macos-codex-0.156.1.
 
 v0 sends direct shell and Python commands through `codex sandbox`. It does **not** run a model turn, agent tools, browser or connector tools, or real credentials. It does not verify an existing user's Codex configuration. It does not test Claude Code or Linux. DNS and off-host TCP are unmeasured with the bundled policy. A PASS says only that the listed action behaved as observed under this generated profile.
 
+## Results matrix and release watch
+
+```sh
+python3 -m keepout matrix results/ --html results/matrix.html --md results/matrix.md
+python3 -m keepout watch --harness codex --policy policy.toml --results results/ [--dry-run] [--force]
+```
+
+`matrix` renders saved result files as one table: one column per harness, CLI version and OS (the newest run wins; older and superseded runs go to History). The HTML page is self-contained, with no scripts and no external files. Every check passes through the publication boundary again. **Held rule:** if a run has any held check (`pending_review` or `suspected_undocumented_bypass`, including a legacy FAIL with no classification), every denial cell in that run shows `held`, so the held check cannot be found from the cells. The row list still comes from public check ids, so when a held run is the only run with its policy, a missing denial row can hint at the held check; the per-run result files also list every other check by id. Review both before sharing a held run. **Leak guard:** if any value looks like an unredacted temporary path, home path or random canary, the command refuses to render and writes nothing (exit 2). It never redacts silently. Legacy runs without allowed-action and omitted-rule controls are labelled as such and are never shown as control-validated.
+
+`watch` reruns the suite only when no result exists for this CLI version, OS and policy. It reads the version through the Codex binary in a throwaway HOME and never runs `codex update` or a shell. If the version changes during a run, it writes no result. If the CLI is missing, it logs UNMEASURED. Each check appends one line to `results/watch-log.jsonl`. `--dry-run` writes nothing. No scheduler is installed.
+
 ## Disclosure
 
 Each result has a `classification`: `documented_behavior` for expected behavior such as inherited environment visibility, `configuration_outcome` for a measured profile outcome, `pending_review` for any new denial failure, or `suspected_undocumented_bypass` when an unexplained bypass warrants vendor review. **A new denial failure is held by default:** it is classified `pending_review`, and the report writer replaces its identifier, description and evidence with **“held for private vendor report”** before writing JSON, Markdown or console output, the same as a suspected bypass. A person reviews it and either reclassifies it (documented behavior or configuration outcome) or reports it privately to the vendor. Future automated publishing must use this same publication boundary. No current result establishes a vendor vulnerability.

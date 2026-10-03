@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
-import platform
+from pathlib import Path
+import sys
 
-from .checks import evaluate, invalidate_denials, make_checks
-from .codex import CodexRunner
+from .checks import make_checks
 from .policy import load_policy
-from .report import markdown, summary, write_report
+from .report import markdown, write_report
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="keepout")
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run", help="run disposable probes against a declared policy")
@@ -21,41 +20,53 @@ def main() -> int:
     run.add_argument("--json", metavar="FILE")
     run.add_argument("--md", metavar="FILE")
     sub.add_parser("list-checks", help="list checks in the bundled example policy")
-    args = parser.parse_args()
+    matrix = sub.add_parser("matrix", help="render saved results as a public matrix")
+    matrix.add_argument("paths", nargs="+", metavar="PATH", help="result .json files or directories")
+    matrix.add_argument("--html", metavar="FILE")
+    matrix.add_argument("--md", metavar="FILE")
+    watch = sub.add_parser("watch", help="run the suite only when the installed CLI has no result yet")
+    watch.add_argument("--harness", choices=["codex"], required=True)
+    watch.add_argument("--policy", required=True)
+    watch.add_argument("--results", required=True, metavar="DIR")
+    watch.add_argument("--dry-run", action="store_true")
+    watch.add_argument("--force", action="store_true")
+    args = parser.parse_args(argv)
     if args.command == "list-checks":
-        from pathlib import Path
         policy = load_policy(Path(__file__).resolve().parents[1] / "policy.toml")
         for check in make_checks(policy.protected_paths, policy.network, policy.inherit_fake_token):
             print(f"{check.id}: {check.description}")
         return 0
-    policy = load_policy(args.policy)
-    with CodexRunner(policy) as runner:
-        version = runner.version()
-        checks = [evaluate(check, runner) for check in make_checks(
-            policy.protected_paths, policy.network, policy.inherit_fake_token, policy.external_routes)]
-        omission = runner.rule_omission()
-        checks = invalidate_denials(checks, omission["verdict"] == "PASS")
-        receipt = runner.receipt()
-    report = {
-        "harness": "codex sandbox named permission profile",
-        "cli_version": version,
-        "os": platform.platform(),
-        "date": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "policy": {
-            "protected_paths": list(policy.protected_paths),
-            "writable_paths": list(policy.writable_paths),
-            "network": policy.network,
-            "inherit_fake_token": policy.inherit_fake_token,
-            "external_routes": policy.external_routes,
-        },
-        "profile_receipt": receipt,
-        "rule_omission": omission,
-        "checks": checks,
-    }
+    if args.command == "matrix":
+        return _matrix(parser, args)
+    if args.command == "watch":
+        from .watch import watch as run_watch
+        return run_watch(args.harness, args.policy, args.results, dry_run=args.dry_run, force=args.force)
+    from .suite import exit_code, run_suite
+    report = run_suite(load_policy(args.policy))
     write_report(report, args.json, args.md)
     print(markdown(report))
-    totals = summary(report)
-    return 1 if totals["FAIL"] or totals["INVALID"] or omission["verdict"] != "PASS" else 0
+    return exit_code(report)
+
+
+def _matrix(parser: argparse.ArgumentParser, args: argparse.Namespace) -> int:
+    from . import matrix
+    if not args.html and not args.md:
+        parser.error("matrix needs --html FILE, --md FILE or both")
+    try:
+        model = matrix.build_model(matrix.load_results(args.paths))
+        outputs = []  # render everything before writing anything
+        if args.html:
+            outputs.append((args.html, matrix.render_html(model)))
+        if args.md:
+            outputs.append((args.md, matrix.render_markdown(model)))
+    except matrix.MatrixError as exc:
+        print(f"keepout matrix: {exc}", file=sys.stderr)
+        return 2
+    for name, text in outputs:
+        path = Path(name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return 0
 
 
 if __name__ == "__main__":

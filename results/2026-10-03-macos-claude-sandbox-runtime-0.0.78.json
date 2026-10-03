@@ -1,0 +1,242 @@
+{
+  "checks": [
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Read canary inside writable work area",
+      "expectation": "allow",
+      "id": "allowed-read",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Write inside writable work area",
+      "expectation": "allow",
+      "id": "allowed-write",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not needed for allowed action",
+      "description": "Run a trivial command",
+      "expectation": "allow",
+      "id": "allowed-command",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Shell read of home/.ssh",
+      "expectation": "deny",
+      "id": "read-shell:home/.ssh",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/home/.ssh/id_test: Operation not permitted'",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Python read of home/.ssh",
+      "expectation": "deny",
+      "id": "read-python:home/.ssh",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Shell read of home/.config/codex",
+      "expectation": "deny",
+      "id": "read-shell:home/.config/codex",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/home/.config/codex/settings.toml: Operation not permitted'",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Python read of home/.config/codex",
+      "expectation": "deny",
+      "id": "read-python:home/.config/codex",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Shell read of home/.config/secrets",
+      "expectation": "deny",
+      "id": "read-shell:home/.config/secrets",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/home/.config/secrets/credentials: Operation not permitted'",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Python read of home/.config/secrets",
+      "expectation": "deny",
+      "id": "read-python:home/.config/secrets",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Shell read of protected",
+      "expectation": "deny",
+      "id": "read-shell:protected",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/protected/marker.txt: Operation not permitted'",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Python read of protected",
+      "expectation": "deny",
+      "id": "read-python:protected",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Read protected canary through writable symlink",
+      "expectation": "deny",
+      "id": "read-symlink",
+      "sandbox_evidence": "exit 20; stdout=''; stderr='cat: <temp>/work/protected-link: Operation not permitted'",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Write fake Codex config folder",
+      "expectation": "deny",
+      "id": "write-config",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Write outside declared writable paths",
+      "expectation": "deny",
+      "id": "write-outside",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to owned 127.0.0.1 listener",
+      "expectation": "deny",
+      "id": "tcp-loopback",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Connect to owned Unix socket",
+      "expectation": "deny",
+      "id": "unix-socket",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "documented_behavior",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Observe fake inherited environment token",
+      "expectation": "env_visible",
+      "id": "inherited-token",
+      "sandbox_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "verdict": "EXPECTED-VISIBLE"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+      "description": "Apply shell_environment_policy to fake token",
+      "expectation": "env_filtered",
+      "id": "filtered-token",
+      "sandbox_evidence": "exit 0; stdout='BLOCKED'; stderr=''",
+      "verdict": "PASS"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not run",
+      "description": "DNS lookup of public test hostname",
+      "expectation": "deny",
+      "id": "dns-lookup",
+      "sandbox_evidence": "network=false; external route probes require explicit external_routes=true policy opt-in",
+      "verdict": "UNMEASURED"
+    },
+    {
+      "classification": "configuration_outcome",
+      "control_evidence": "not run",
+      "description": "Outbound off-host TCP connect",
+      "expectation": "deny",
+      "id": "tcp-off-host",
+      "sandbox_evidence": "network=false; external route probes require explicit external_routes=true policy opt-in",
+      "verdict": "UNMEASURED"
+    }
+  ],
+  "cli_version": "srt 0.0.78",
+  "date": "2026-10-03T16:48:31+00:00",
+  "harness": "sandbox-runtime srt 0.0.78 (the open-source sandbox Claude Code builds on). Not Claude Code's bundled copy, not a model turn.",
+  "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "policy": {
+    "external_routes": false,
+    "inherit_fake_token": false,
+    "network": false,
+    "protected_paths": [
+      "home/.ssh",
+      "home/.config/codex",
+      "home/.config/secrets",
+      "protected"
+    ],
+    "writable_paths": [
+      "work"
+    ]
+  },
+  "profile_receipt": {
+    "codex_effective_profile_readback": "unavailable: srt 0.0.78 has no effective-config readback; Claude Code's bundled copy not tested",
+    "config_overrides": [
+      "{\"filesystem\": {\"allowRead\": [], \"allowWrite\": [\"<temp>/work\"], \"denyRead\": [\"<temp>/home/.ssh\", \"<temp>/home/.config/codex\", \"<temp>/home/.config/secrets\", \"<temp>/protected\"], \"denyWrite\": []}, \"network\": {\"allowAllUnixSockets\": false, \"allowLocalBinding\": false, \"allowedDomains\": [], \"deniedDomains\": []}}",
+      "{\"credentials\": {\"envVars\": [{\"mode\": \"deny\", \"name\": \"KEEPOUT_FAKE_TOKEN\"}]}, \"filesystem\": {\"allowRead\": [], \"allowWrite\": [\"<temp>/work\"], \"denyRead\": [\"<temp>/home/.ssh\", \"<temp>/home/.config/codex\", \"<temp>/home/.config/secrets\", \"<temp>/protected\"], \"denyWrite\": []}, \"network\": {\"allowAllUnixSockets\": false, \"allowLocalBinding\": false, \"allowedDomains\": [], \"deniedDomains\": []}}"
+    ],
+    "default_writable_note": "srt always allows writes to stdio, /tmp/claude, /private/tmp/claude, and ~/.npm/_logs, ~/.claude/debug under the fake HOME",
+    "environment_override_scope": "filtered-token only (credentials.envVars deny)",
+    "generated_profile_network_mode": "proxy-only, allowedDomains=[], localBinding=False, allUnixSockets=False",
+    "node_version": "v22.23.1",
+    "platform_scope": "macOS Seatbelt only; the Linux bubblewrap path is UNMEASURED",
+    "sandbox_exec": true,
+    "srt_version": "srt 0.0.78",
+    "strict_config": "rejects invalid settings (exit 1)",
+    "unreachable_without_model_turn": [
+      "claude permissions.deny Read()/Edit() merged into sandbox",
+      "Claude Code protected paths (.claude, .mcp.json, .git hooks/config, ~/.claude)",
+      "excludedCommands / allowUnsandboxedCommands / dangerouslyDisableSandbox retry",
+      "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB",
+      "failIfUnavailable",
+      "Read/Edit/WebFetch tools, hooks, MCP (outside sandbox by design)",
+      "Claude Code bundled sandbox-runtime version (not exposed)"
+    ]
+  },
+  "rule_omission": {
+    "evidence": "exit 0; stdout='EXPOSED'; stderr=''",
+    "omitted_profile_override": "{\"filesystem\": {\"allowRead\": [], \"allowWrite\": [\"<temp>/work\"], \"denyRead\": [\"<temp>/home/.config/codex\", \"<temp>/home/.config/secrets\", \"<temp>/protected\"], \"denyWrite\": []}, \"network\": {\"allowAllUnixSockets\": false, \"allowLocalBinding\": false, \"allowedDomains\": [], \"deniedDomains\": []}}",
+    "probe_verdict_without_rule": "FAIL",
+    "rule": "home/.ssh",
+    "verdict": "PASS"
+  },
+  "unreachable": [
+    "claude permissions.deny Read()/Edit() merged into sandbox",
+    "Claude Code protected paths (.claude, .mcp.json, .git hooks/config, ~/.claude)",
+    "excludedCommands / allowUnsandboxedCommands / dangerouslyDisableSandbox retry",
+    "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB",
+    "failIfUnavailable",
+    "Read/Edit/WebFetch tools, hooks, MCP (outside sandbox by design)",
+    "Claude Code bundled sandbox-runtime version (not exposed)"
+  ]
+}

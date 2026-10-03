@@ -55,6 +55,8 @@ KEEPOUT_SRT="$TMPDIR/keepout-srt/node_modules/@anthropic-ai/sandbox-runtime/dist
 
 `KEEPOUT_SRT` may also name the `.bin/srt` shim; otherwise `srt` on `PATH` is used. Setting `KEEPOUT_SRT` also enables a live test in `python3 -m unittest`.
 
+The [October 3 macOS result](results/2026-10-03-macos-claude-sandbox-runtime-0.0.78.md) records srt 0.0.78 with the bundled policy: controls passed, no denial failures, the inherited token EXPECTED-VISIBLE, DNS and off-host TCP UNMEASURED. It applies to srt 0.0.78 on that macOS build only, not to Claude Code's bundled copy.
+
 Not reachable without a model turn (UNMEASURED):
 
 - claude permissions.deny Read()/Edit() merged into sandbox

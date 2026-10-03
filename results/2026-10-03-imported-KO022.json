@@ -182,7 +182,7 @@
     "tested": 8,
     "untestable": 3
   },
-  "date": "2026-10-03T17:20:15+00:00",
+  "date": "2026-10-03T17:31:28+00:00",
   "dropped_top_level_keys": [],
   "extends_chain": [
     "p",
@@ -208,7 +208,7 @@
     }
   ],
   "log_denials": {
-    "attempts": 1,
+    "attempts": 2,
     "evidence": "(cat) file-read-data <temp>/dir-shape/abs/keepout-fixture-root/prot/keepout-canary",
     "other_denial_lines": 15,
     "row": "deny:/keepout-fixture-root/prot[dir]:shell-read",

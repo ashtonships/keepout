@@ -153,7 +153,14 @@ def build_config(cfg: cc.CodexConfig, resolved: cc.ResolvedProfile, layout: Layo
                     if omit == (name, path):
                         continue
                     scope = cc.scope_of(path)
-                    if isinstance(access, dict) or scope in ("token", "relative"):
+                    if isinstance(access, dict):
+                        # A subtable's children are relative subpaths: drop an omitted child, and remap an absolute
+                        # parent like any other absolute key so no real path reaches the generated config.
+                        children = {sub: value for sub, value in access.items()
+                                    if omit not in ((name, sub), (name, path.rstrip("/") + "/" + sub))}
+                        fs[layout.config_key(scope, path) if scope == "abs" else path] = children
+                        continue
+                    if scope in ("token", "relative"):
                         fs[path] = access
                         continue
                     fs[layout.config_key(scope, path)] = access
@@ -270,6 +277,11 @@ class ImportedRunner:
         dir_l, file_l = self.layouts["dir"], self.layouts["file"]
         entries = [entry for entry in res.filesystem if entry.access != "table"]
         rows.append(Row("allowed:echo", "allowed", "Run /bin/echo in workspace/", "allow", Probe("echo")))
+        for entry in [item for item in entries if item.scope == "relative"]:
+            rows.append(Row(f"relative:{entry.label}", "relative", f"{entry.label} = {entry.access}",
+                            "allow" if entry.access in ("read", "write") else "deny", entry=entry.label,
+                            lint_id="KO016", untestable_reason="relative path: Codex 0.156.1 refuses it (KO016)"))
+        entries = [entry for entry in entries if entry.scope != "relative"]
         for entry in entries:
             if entry.access in ("read", "write") and entry.scope != "token" and not cc.is_glob(entry.path):
                 mapped = dir_l.map_path(entry.scope, entry.path)
@@ -344,6 +356,10 @@ class ImportedRunner:
         file_reason = ("token maps to a folder" if entry.scope == "token" else
                        "other entries sit inside this path; it cannot be a file" if nested else "")
         file_path = None if file_reason else file_l.map_path(entry.scope, entry.path)
+        if file_path is not None and any(own.is_relative_to(file_path) for own in
+                                         (file_l.codex_home, file_l.workspace, file_l.tmp, file_l.root / "abs")):
+            file_reason = "path holds Keepout's own CODEX_HOME, workspace, TMPDIR or abs folder; it cannot be a file"
+            file_path = None
         for name, kind in (("shell-read", "shell_read"), ("python-read", "python_read"), ("overwrite", "overwrite")):
             probe = Probe(kind, file_path, "file", canary=file_path) if file_path else None
             row = Row(f"deny:{label}[file]:{name}", "deny", f"{name} of {label} as a file", "deny", probe, label,
@@ -400,7 +416,7 @@ class ImportedRunner:
                             f"{parent.profile}'s {parent.label} = {parent.access}", "deny" if parent.access == "deny"
                             else "allow", entry=parent.label,
                             untestable_reason="replaced by child profile entry, see KO024"))
-            if parent.access in ("deny", "none") and child.access in ("read", "write") and parent.scope != "token":
+            if parent.access in ("deny", "none") and child.access in ("read", "write") and parent.scope not in ("token", "relative"):
                 canary = dir_l.map_path(parent.scope, parent.path) / "keepout-canary"
                 rows.append(Row(f"extends-relax:{parent.label}:shell-read", "extends-relax",
                                 f"Read a canary under {parent.label}, denied by parent {parent.profile} and set to "
@@ -639,7 +655,8 @@ class ImportedRunner:
                 remap.append({"original": entry.label, "profile": entry.profile, "mapped": f"refused: {exc}"})
                 continue
             remap.append({"original": entry.label, "profile": entry.profile, "access": entry.access,
-                          "mapped": self.clean(str(mapped)) if mapped else "not remapped (token)"})
+                          "mapped": self.clean(str(mapped)) if mapped else
+                          ("not remapped (relative path, KO016)" if entry.scope == "relative" else "not remapped (token)")})
         counts = {name: sum(item["verdict"] == name for item in results)
                   for name in ("PASS", "FAIL", "INVALID", "UNMEASURED")}
         counts["tested"] = sum(item["tested"] for item in results)
@@ -675,6 +692,8 @@ class ImportedRunner:
 
     def clean(self, value: str) -> str:
         value = value.replace(self.marker, "<redacted>").replace(str(self.root), "<temp>")
+        if self.temp:
+            value = value.replace(self.temp.name, "<temp>")  # the unresolved /var/... spelling as well
         if self.min_dir:
             value = value.replace(self.min_dir, "/private/tmp/<keepout-min>")
         return value.replace(str(Path.home()), "~")
@@ -758,7 +777,8 @@ def public_report(report: dict) -> dict:
     for item in out.get("checks", []):
         safe = public_result(item)
         if safe.get("classification") in HELD:
-            for key in ("entry", "note", "known_outcome"):
+            # The row kind and lint id would name the class of a suspected bypass; withhold them too.
+            for key in ("entry", "note", "known_outcome", "kind", "lint_id"):
                 if key in safe:
                     safe[key] = WITHHELD
         else:

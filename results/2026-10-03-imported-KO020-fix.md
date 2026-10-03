@@ -3,7 +3,7 @@
 - Harness: `codex sandbox imported permission profile`
 - CLI: `codex-cli 0.156.1`
 - OS: `macOS-27.0.1-arm64-arm-64bit-Mach-O`
-- Run time (UTC): `2026-10-03T17:20:01+00:00`
+- Run time (UTC): `2026-10-03T17:31:37+00:00`
 - Config: `KO020-fix.toml` sha256 `82b3d0c71d48d6aa5e3d82286f2ae164ef659773813b11674908cd55fc1f7e51` (fixture: `{R}` read as `/keepout-fixture-root`)
 - Profile: `p`; extends chain: `p`
 - Summary: controls passed; tested 11, untestable 1; PASS 4, FAIL 0, INVALID 0, UNMEASURED 8

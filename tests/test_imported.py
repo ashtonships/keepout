@@ -105,6 +105,36 @@ class GeneratedConfigTests(unittest.TestCase):
         self.assertEqual(list(tomllib.loads(text)["permissions"]["p"]["filesystem"].values()), ["write"])
 
 
+class EdgeConfigTests(unittest.TestCase):
+    def write(self, folder: str, body: str) -> cc.CodexConfig:
+        path = Path(folder) / "config.toml"
+        path.write_text('default_permissions = "p"\n[permissions.p]\nextends = ":read-only"\n'
+                        '[permissions.p.filesystem]\n' + body)
+        return cc.load_codex_config(path)
+
+    def test_absolute_subtable_is_remapped_and_its_children_can_be_omitted(self):
+        with tempfile.TemporaryDirectory() as temp:
+            cfg = self.write(temp, '"/Users/someone/real" = { "secret" = "deny", "work" = "write" }\n')
+            layout = imported.Layout(Path(temp).resolve() / "root")
+            text, _, _ = imported.build_config(cfg, cc.resolve(cfg, "p"), layout)
+            self.assertNotIn('"/Users/someone/real"', text)
+            fs = tomllib.loads(text)["permissions"]["p"]["filesystem"]
+            self.assertEqual(fs, {str(layout.root / "abs/Users/someone/real"): {"secret": "deny", "work": "write"}})
+            text, _, _ = imported.build_config(cfg, cc.resolve(cfg, "p"), layout,
+                                               omit=("p", "/Users/someone/real/secret"))
+            self.assertEqual(list(tomllib.loads(text)["permissions"]["p"]["filesystem"].values()),
+                             [{"work": "write"}])
+
+    def test_relative_entries_and_own_folders_are_untestable_not_a_crash(self):
+        with tempfile.TemporaryDirectory() as temp:
+            cfg = self.write(temp, '"rel" = "deny"\n"~/.codex" = "deny"\n')
+            with imported.ImportedRunner(cfg, "p", cli=NO_CODEX) as runner:
+                rows = {row.id: row for row in runner.rows}
+        self.assertIn("KO016", rows["relative:rel"].untestable_reason)
+        self.assertIn("CODEX_HOME", rows["deny:~/.codex[file]:shell-read"].untestable_reason)
+        self.assertIsNotNone(rows["deny:~/.codex[dir]:shell-read"].probe)
+
+
 class PlanTests(unittest.TestCase):
     def rows(self, name: str, profile: str = "p") -> dict[str, imported.Row]:
         with imported.ImportedRunner(load(name), profile, cli=NO_CODEX) as runner:
@@ -182,6 +212,7 @@ class ControlAndHoldTests(unittest.TestCase):
         for held in public[1:]:
             self.assertEqual(held["id"], "suspected-bypass")
             self.assertEqual((held["sandbox_evidence"], held["entry"]), (WITHHELD, WITHHELD))
+            self.assertEqual((held["kind"], held["lint_id"]), (WITHHELD, WITHHELD))  # never names the class
         self.assertNotIn("secret", json.dumps(public[1:]))
 
     def test_known_outcomes_table_is_the_reviewed_set(self):

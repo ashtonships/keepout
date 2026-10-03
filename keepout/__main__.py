@@ -24,6 +24,9 @@ def build_parser() -> argparse.ArgumentParser:
                      help="allow a config under ~/.codex, ~/.claude, ~/.ssh or ~/.config (only that file is read)")
     run.add_argument("--json", metavar="FILE")
     run.add_argument("--md", metavar="FILE")
+    run.add_argument("--show-paths", action="store_true",
+                     help="with --config: saved files keep the last two components of each config path "
+                          "(default: opaque labels; the console always shows them)")
     lint = sub.add_parser("lint", help="lint an existing Codex config (static; --codex-check runs Codex)")
     lint.add_argument("config")
     lint.add_argument("--profile")
@@ -142,8 +145,8 @@ def _run_imported(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
         return 2
     with runner:
         report = runner.run()
-    imported.write_report(report, args.json, args.md)
-    print(imported.markdown(report))
+    imported.write_report(report, args.json, args.md, args.show_paths)
+    print(imported.markdown(report, show_paths=True))
     return imported.exit_code(report)
 
 

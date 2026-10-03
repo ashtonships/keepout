@@ -17,6 +17,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import secrets
 import select
 import shutil
@@ -757,22 +758,62 @@ def _short(path: str) -> str:
     return "/".join([parts[0], "...", *rest[-2:]])
 
 
-def public_report(report: dict) -> dict:
-    """Held rows are withheld; original config paths shrink to their last two components."""
+def _label(path: str, number: int) -> str:
+    """An opaque label that keeps only the path's scope: /<path-01>, ~/<path-02>; Codex tokens stay."""
+    if path.startswith(":"):
+        return path
+    return ("~/" if path.startswith("~") else "/") + f"<path-{number:02d}>"
+
+
+# Path components that name no person, client or project; every other component of a config path is masked.
+GENERIC_COMPONENTS = frozenset({
+    "Users", "home", "Volumes", "private", "tmp", "var", "folders", "etc", "opt", "usr", "bin", "Library",
+    "Application Support", ".ssh", ".config", ".codex", ".claude", ".aws", ".gnupg", ".kube", ".docker", ".npm",
+    ".local", "share", "secrets", "keepout-canary"})
+
+
+def public_report(report: dict, show_paths: bool = False) -> dict:
+    """Held rows are withheld. Original config paths become opaque labels in order of appearance, because even the
+    last components of a real path can name a person, client or project; show_paths keeps the last two. Every
+    string in the report then passes the same mask, so partial forms (a parent folder in a TOML header,
+    <temp>/.../home/<rest>, the denial log) cannot carry a real name either."""
     out = json.loads(json.dumps(report))
-    originals = sorted({item["original"] for item in out.get("remap", [])}, key=len, reverse=True)
-    normalized = sorted({cc.normalize(item) for item in originals if item.startswith(("/", "~"))}, key=len,
-                        reverse=True)
+    order: list[str] = []
+    for item in out.get("remap", []):
+        if item["original"] not in order:
+            order.append(item["original"])
+    shown = {path: _short(path) if show_paths else _label(path, number) for number, path in enumerate(order, 1)}
+    for path in order:
+        if path.startswith(("/", "~")):
+            shown.setdefault(cc.normalize(path), shown[path])
+    longest_first = sorted(shown, key=len, reverse=True)
+    components: list[str] = []
+    for path in order:
+        for part in path.split("/"):
+            if part and not part.startswith((":", "~")) and part not in GENERIC_COMPONENTS and part not in components:
+                components.append(part)
+    masks = [] if show_paths else [
+        (re.compile(r"(?<=/)" + re.escape(part) + r"(?=$|[/\"'\\\s:\[\]])"), f"<c{number:02d}>")
+        for number, part in sorted(enumerate(components, 1), key=lambda pair: len(pair[1]), reverse=True)]
 
     def shrink(value: str) -> str:
-        for original in [*originals, *normalized]:
-            value = value.replace(original, _short(original))
+        for original in longest_first:
+            value = value.replace(original, shown[original])
+        for pattern, label in masks:
+            value = pattern.sub(label, value)
+        return value
+
+    def sweep(value: object) -> object:
+        if isinstance(value, str):
+            return shrink(value)
+        if isinstance(value, list):
+            return [sweep(item) for item in value]
+        if isinstance(value, dict):
+            return {key: sweep(item) for key, item in value.items()}
         return value
 
     for item in out.get("remap", []):
-        item["original"] = _short(item["original"])
-        item["mapped"] = shrink(item["mapped"])
-    out["generated_config"] = shrink(out.get("generated_config", ""))
+        item["original"] = shown[item["original"]]
     checks = []
     for item in out.get("checks", []):
         safe = public_result(item)
@@ -781,20 +822,19 @@ def public_report(report: dict) -> dict:
             for key in ("entry", "note", "known_outcome", "kind", "lint_id"):
                 if key in safe:
                     safe[key] = WITHHELD
-        else:
-            safe = {key: shrink(value) if isinstance(value, str) else value for key, value in safe.items()}
         checks.append(safe)
     out["checks"] = checks
     for item in out.get("lint", []):
         item["file"] = Path(str(item.get("file") or "")).name  # never the local folder layout
-        for key in ("message", "path"):
-            if isinstance(item.get(key), str):
-                item[key] = shrink(item[key])
+    config = out.pop("config", None)
+    out = sweep(out)
+    if config is not None:
+        out["config"] = config  # file name and sha256 only
     return out
 
 
-def markdown(report: dict) -> str:
-    report = public_report(report)
+def markdown(report: dict, show_paths: bool = False) -> str:
+    report = public_report(report, show_paths)
     counts = report["counts"]
     lines = [
         "# Keepout result: imported Codex profile",
@@ -850,15 +890,15 @@ def _cells(cells: tuple) -> str:
     return "| " + " | ".join(str(cell).replace("|", "\\|").replace("\n", " ") for cell in cells) + " |"
 
 
-def write_report(report: dict, json_path: str | None, md_path: str | None) -> None:
+def write_report(report: dict, json_path: str | None, md_path: str | None, show_paths: bool = False) -> None:
     if json_path:
         path = Path(json_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(public_report(report), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        path.write_text(json.dumps(public_report(report, show_paths), indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if md_path:
         path = Path(md_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(markdown(report), encoding="utf-8")
+        path.write_text(markdown(report, show_paths), encoding="utf-8")
 
 
 def exit_code(report: dict) -> int:

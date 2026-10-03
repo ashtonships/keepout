@@ -235,13 +235,23 @@ class ControlAndHoldTests(unittest.TestCase):
         self.assertEqual(status, "INVALID: omitted-rule control failed; denials prove nothing")
         self.assertEqual(results[1]["verdict"], "INVALID")
 
-    def test_public_report_shrinks_original_paths_to_two_components(self):
+    def test_public_report_labels_original_paths_and_masks_partial_forms(self):
         report = {"remap": [{"original": "/Users/someone/work/.secrets", "mapped": "<temp>/abs/Users/someone/work/.secrets"},
-                            {"original": "~/.config/app/token", "mapped": "<temp>/home/.config/app/token"}],
-                  "generated_config": '"<temp>/abs/Users/someone/work/.secrets" = "deny"', "lint": [], "checks": []}
+                            {"original": "~/.config/app/token", "mapped": "<temp>/home/.config/app/token"},
+                            {"original": "/Volumes/clientco/sub", "mapped": "<temp>/abs/Volumes/clientco/sub"}],
+                  "generated_config": '"<temp>/abs/Users/someone/work/.secrets" = "deny"\n["<temp>/abs/Volumes/clientco"]',
+                  "log_denials": {"row": "deny:/Users/someone/work/.secrets[dir]:shell-read",
+                                  "evidence": "(cat) file-read-data <temp>/dir-shape/home/.config/app/token/k"},
+                  "config": {"file": "config.toml", "sha256": "0" * 64}, "lint": [], "checks": []}
         public = imported.public_report(report)
-        self.assertEqual([item["original"] for item in public["remap"]], ["/.../work/.secrets", "~/.../app/token"])
-        self.assertNotIn("someone", json.dumps(public))
+        self.assertEqual([item["original"] for item in public["remap"]], ["/<path-01>", "~/<path-02>", "/<path-03>"])
+        text = json.dumps(public)
+        for name in ("someone", "work", "app", "token", "clientco"):
+            self.assertNotRegex(text, rf"/{name}\b", name)
+        self.assertEqual(public["config"], report["config"])
+        shown = imported.public_report(report, show_paths=True)
+        self.assertEqual([item["original"] for item in shown["remap"]],
+                         ["/.../work/.secrets", "~/.../app/token", "/.../clientco/sub"])
 
     def test_denial_log_parsing(self):
         out = "x\n=== Sandbox denials ===\n(sh) sysctl-read kern.x\n(cat) file-read-data <temp>/dir-shape/home/.ssh/k\n"

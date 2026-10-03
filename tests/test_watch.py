@@ -130,6 +130,31 @@ class WatchTests(unittest.TestCase):
         for secret in ("read-shell:protected", "private recipe", "control secret", "bypass secret"):
             self.assertNotIn(secret, saved)
 
+    def test_suite_crash_is_logged_unmeasured_and_writes_no_result(self):
+        def boom(policy):
+            raise OSError("runner died")
+        with self.assertRaises(OSError):
+            self.watch(["codex-cli 0.157.0"], suite_fn=boom)
+        self.assertEqual(list(self.results.glob("*.json")), [])
+        self.assertEqual(self.log()[0]["action"], "error")
+        self.assertIn("UNMEASURED", self.log()[0]["reason"])
+
+    def test_suite_measuring_another_version_writes_no_result(self):
+        code, _ = self.watch(["codex-cli 0.157.0", "codex-cli 0.157.0"],
+                             suite_fn=self.suite(version="codex-cli 0.155.0"))
+        self.assertEqual(code, 2)
+        self.assertEqual(list(self.results.glob("*.json")), [])
+        self.assertIn("CLI version changed during run", self.log()[0]["reason"])
+
+    def test_cli_version_timeout_becomes_runtime_error(self):
+        import subprocess
+        from unittest import mock
+        from keepout import codex
+        with mock.patch.object(codex.subprocess, "run",
+                               side_effect=subprocess.TimeoutExpired(["codex"], 10)):
+            with self.assertRaises(RuntimeError):
+                codex.cli_version("/nonexistent/codex")
+
 
 if __name__ == "__main__":
     unittest.main()

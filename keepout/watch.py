@@ -81,11 +81,20 @@ def watch(harness: str, policy_path: str, results_dir: str, *, dry_run: bool = F
         print(f"would run: {version} (no result for this version/os/policy)" if not match else
               f"would run: {version} (--force; existing result {match})")
         return 0
-    report = suite_fn(policy)
+    try:
+        report = suite_fn(policy)
+    except Exception as exc:
+        _log(results, now, harness, version, os_name, "error",
+             reason=f"UNMEASURED: suite failed: {type(exc).__name__}")
+        raise
     try:
         after = version_fn()
     except (FileNotFoundError, RuntimeError) as exc:
         after = f"unavailable ({type(exc).__name__})"
+    if report.get("cli_version") != version:
+        # The suite measured a different binary or version string than the watch checked; a result saved
+        # under the wrong version would never match again and would rerun forever.
+        after = f"suite measured {report.get('cli_version')!r}"
     if after != version:
         reason = "CLI version changed during run"
         _log(results, now, harness, version, os_name, "error", reason=f"{reason}: {version} -> {after}")

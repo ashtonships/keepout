@@ -91,6 +91,8 @@ def normalize(run: dict) -> dict:
     out["checks"] = checks
     out["superseded"] = bool(run.get("superseded_note"))
     out["legacy"] = "rule_omission" not in run
+    if not out["legacy"] and (not isinstance(run["rule_omission"], dict) or "verdict" not in run["rule_omission"]):
+        raise MatrixError(f"{run.get('_file', '?')}: rule_omission must be an object with a verdict")
     out["held_count"] = sum(check["classification"] in HELD for check in checks)
     if out["legacy"]:
         out["status"] = LEGACY_STATUS

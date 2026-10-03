@@ -169,6 +169,11 @@ class MatrixTests(unittest.TestCase):
             matrix.load_results([str(missing)])
         self.assertIn("partial.json", str(ctx.exception))
 
+    def test_malformed_rule_omission_is_a_matrix_error(self):
+        path = self.write("odd.json", run(rule_omission="PASS"))
+        with self.assertRaises(matrix.MatrixError):
+            self.render(path)
+
 
 if __name__ == "__main__":
     unittest.main()

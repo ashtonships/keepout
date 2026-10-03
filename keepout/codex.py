@@ -93,8 +93,13 @@ def cli_version(cli: str | None = None) -> str:
             folder.mkdir(parents=True, exist_ok=True)
         env = {"PATH": "/usr/bin:/bin:/opt/homebrew/bin", "HOME": str(home), "CODEX_HOME": str(codex_home),
                "TMPDIR": str(root / "tmp"), "LANG": "en_US.UTF-8"}
-        result = subprocess.run([binary, "--version"], cwd=root, env=env, capture_output=True, text=True,
-                                timeout=10)
+        try:
+            result = subprocess.run([binary, "--version"], cwd=root, env=env, capture_output=True, text=True,
+                                    timeout=10)
+        except FileNotFoundError:
+            raise
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            raise RuntimeError(f"codex --version could not run ({type(exc).__name__})") from None
         if result.returncode != 0:
             raise RuntimeError(f"codex --version failed with exit {result.returncode}")
         return result.stdout.strip()
